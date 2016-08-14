@@ -31,43 +31,43 @@ abstract Array<T>(NativeArray) from NativeArray to NativeArray {
 	public function new() : Void
 		this = untyped __php__('[]');
 
-	public function concat( a : Array<T> ) : Array<T>
+	inline public function concat( a : Array<T> ) : Array<T>
 		return untyped __call__('array_merge', this, a);
 
-	public function join( sep : String ) : String
+	inline public function join( sep : String ) : String
 		return untyped __call__('implode', sep, this);
 
-	public function pop() : Null<T>
+	inline public function pop() : Null<T>
 		return untyped __call__('array_pop', this);
 	
-	public function push(x : T) : Int
+	inline public function push(x : T) : Int
 		return untyped __call__('array_push', this, x);
 
-	public function reverse() : Void
+	inline public function reverse() : Void
 		untyped __call__('usort', this, function(a, b) return 0);
 
-	public function shift() : Null<T>
+	inline public function shift() : Null<T>
 		return untyped __call__('array_shift', this);
 
-	public function slice( pos : Int, ?end : Int ) : Array<T>
+	inline public function slice( pos : Int, ?end : Int ) : Array<T>
 		return untyped __call__('array_slice', this, pos, end);
 
-	public function sort( f : T -> T -> Int ) : Void
+	inline public function sort( f : T -> T -> Int ) : Void
 		untyped __call__('usort', this, f);
 
-	public function splice( pos : Int, len : Int ) : Array<T>
+	inline public function splice( pos : Int, len : Int ) : Array<T>
 		return untyped __call__('array_splice ', this, pos, len);
 
-	public function toString() : String
+	inline public function toString() : String
 		return untyped __call__('print_r', this, true);
 
-	public function unshift( x : T ) : Void
+	inline public function unshift( x : T ) : Void
 		untyped __call__('array_unshift', this, x);
 	
-	public function insert( pos : Int, x : T ) : Void
+	inline public function insert( pos : Int, x : T ) : Void
 		untyped __call__('array_splice', this, pos, 0, x);
 
-	public function remove( x : T ) : Bool {
+	inline public function remove( x : T ) : Bool {
 		var index = indexOf(x);
 		if (index == -1) {
 			return false;
@@ -77,12 +77,12 @@ abstract Array<T>(NativeArray) from NativeArray to NativeArray {
 		}
 	}
 
-	public function indexOf( x : T, ?fromIndex:Int ) : Int {
+	inline public function indexOf( x : T, ?fromIndex:Int ) : Int {
 		var index = untyped __call__('array_search', x, this, true);
 		return untyped __physeq__(index, false) ? -1 : index;
 	}
 
-	public function lastIndexOf( x : T, ?fromIndex:Int ) : Int {
+	inline public function lastIndexOf( x : T, ?fromIndex:Int ) : Int {
 		var key: Int;
 		untyped __call__('end', this);
 		while ((key = untyped __call__('key', this)) != null) {
@@ -92,16 +92,16 @@ abstract Array<T>(NativeArray) from NativeArray to NativeArray {
 		return key == null ? -1 : key;
 	}
 
-	public function copy() : Array<T>
+	inline public function copy() : Array<T>
 		return untyped __call__('array_merge', this, []);
 
-	public function iterator() : Iterator<T>
+	inline public function iterator() : Iterator<T>
 		return new ArrayIterator<T>(this);
 
-	public function map<S>( f : T -> S ) : Array<S>
+	inline public function map<S>( f : T -> S ) : Array<S>
 		return untyped __call__('array_map', f, this);
 
-	public function filter( f : T -> Bool ) : Array<T>
+	inline public function filter( f : T -> Bool ) : Array<T>
 		return untyped __call__('array_filter', this, f);
 		
 }
