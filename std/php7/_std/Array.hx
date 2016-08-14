@@ -20,51 +20,54 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-extern class Array<T> {
+private extern class NativeArray {}
 
-	var length(get, never) : Int;
+abstract Array<T>(NativeArray) from NativeArray to NativeArray {
+	
+	public var length(get, never) : Int;
 	inline function get_length() : Int
 		return untyped __call__('count', this);
 
-	function new() : Void;
+	public function new() : Void
+		this = untyped __php__('[]');
 
-	inline function concat( a : Array<T> ) : Array<T>
+	public function concat( a : Array<T> ) : Array<T>
 		return untyped __call__('array_merge', this, a);
 
-	inline function join( sep : String ) : String
+	public function join( sep : String ) : String
 		return untyped __call__('implode', sep, this);
 
-	inline function pop() : Null<T>
+	public function pop() : Null<T>
 		return untyped __call__('array_pop', this);
 	
-	inline function push(x : T) : Int
+	public function push(x : T) : Int
 		return untyped __call__('array_push', this, x);
 
-	inline function reverse() : Void
+	public function reverse() : Void
 		untyped __call__('usort', this, function(a, b) return 0);
 
-	inline function shift() : Null<T>
+	public function shift() : Null<T>
 		return untyped __call__('array_shift', this);
 
-	inline function slice( pos : Int, ?end : Int ) : Array<T>
+	public function slice( pos : Int, ?end : Int ) : Array<T>
 		return untyped __call__('array_slice', this, pos, end);
 
-	inline function sort( f : T -> T -> Int ) : Void
+	public function sort( f : T -> T -> Int ) : Void
 		untyped __call__('usort', this, f);
 
-	inline function splice( pos : Int, len : Int ) : Array<T>
+	public function splice( pos : Int, len : Int ) : Array<T>
 		return untyped __call__('array_splice ', this, pos, len);
 
-	inline function toString() : String
+	public function toString() : String
 		return untyped __call__('print_r', this, true);
 
-	inline function unshift( x : T ) : Void
+	public function unshift( x : T ) : Void
 		untyped __call__('array_unshift', this, x);
 	
-	inline function insert( pos : Int, x : T ) : Void
+	public function insert( pos : Int, x : T ) : Void
 		untyped __call__('array_splice', this, pos, 0, x);
 
-	inline function remove( x : T ) : Bool {
+	public function remove( x : T ) : Bool {
 		var index = indexOf(x);
 		if (index == -1) {
 			return false;
@@ -74,12 +77,12 @@ extern class Array<T> {
 		}
 	}
 
-	inline function indexOf( x : T, ?fromIndex:Int ) : Int {
+	public function indexOf( x : T, ?fromIndex:Int ) : Int {
 		var index = untyped __call__('array_search', x, this, true);
 		return untyped __physeq__(index, false) ? -1 : index;
 	}
 
-	inline function lastIndexOf( x : T, ?fromIndex:Int ) : Int {
+	public function lastIndexOf( x : T, ?fromIndex:Int ) : Int {
 		var key: Int;
 		untyped __call__('end', this);
 		while ((key = untyped __call__('key', this)) != null) {
@@ -89,17 +92,18 @@ extern class Array<T> {
 		return key == null ? -1 : key;
 	}
 
-	inline function copy() : Array<T>
+	public function copy() : Array<T>
 		return untyped __call__('array_merge', this, []);
 
-	inline function iterator() : Iterator<T>
+	public function iterator() : Iterator<T>
 		return new ArrayIterator<T>(this);
 
-	inline function map<S>( f : T -> S ) : Array<S>
+	public function map<S>( f : T -> S ) : Array<S>
 		return untyped __call__('array_map', f, this);
 
-	inline function filter( f : T -> Bool ) : Array<T>
+	public function filter( f : T -> Bool ) : Array<T>
 		return untyped __call__('array_filter', this, f);
+		
 }
 
 private class ArrayIterator<T> {
@@ -107,13 +111,13 @@ private class ArrayIterator<T> {
 	var array: Array<T>;
 	var i: Int = 0;
 	
-	inline public function new(array: Array<T>)
+	public function new(array: Array<T>)
 		this.array = array;
 	
-	inline public function next(): T
+	public function next(): T
 		return array[i++];
 		
-	inline public function hasNext(): Bool
+	public function hasNext(): Bool
 		return i < array.length;
 	
 }
