@@ -28,7 +28,7 @@ abstract Array<T>(NativeArray) from NativeArray to NativeArray {
 	inline function get_length() : Int
 		return untyped __call__('count', this);
 
-	public function new() : Void
+	inline public function new() : Void
 		this = untyped __php__('[]');
 
 	inline public function concat( a : Array<T> ) : Array<T>
@@ -44,7 +44,7 @@ abstract Array<T>(NativeArray) from NativeArray to NativeArray {
 		return untyped __call__('array_push', this, x);
 
 	inline public function reverse() : Void
-		untyped __call__('usort', this, function(a, b) return 0);
+		this = untyped __call__('array_reverse', this);
 
 	inline public function shift() : Null<T>
 		return untyped __call__('array_shift', this);
@@ -78,18 +78,24 @@ abstract Array<T>(NativeArray) from NativeArray to NativeArray {
 	}
 
 	inline public function indexOf( x : T, ?fromIndex:Int ) : Int {
-		var index = untyped __call__('array_search', x, this, true);
-		return untyped __physeq__(index, false) ? -1 : index;
+		var index: Int = untyped __call__('array_search', x, this, true);
+		return untyped index == false ? -1 : index;
 	}
 
-	inline public function lastIndexOf( x : T, ?fromIndex:Int ) : Int {
-		var key: Int;
-		untyped __call__('end', this);
-		while ((key = untyped __call__('key', this)) != null) {
-			untyped __call__('prev', this);
-			if (untyped __call__('current', this) == x) break;
+	public function lastIndexOf( x : T, ?fromIndex:Int ) : Int {
+		var len = length;
+		var i = fromIndex == null ? len - 1 : fromIndex;
+		var a = this;
+		if (i >= len)
+			i = len - 1;
+		else if (i < 0)
+			i += len;
+		while (i >= 0) {
+			if (a[i] == x)
+				return i;
+			i--;
 		}
-		return key == null ? -1 : key;
+		return -1;
 	}
 
 	inline public function copy() : Array<T>
@@ -111,13 +117,13 @@ private class ArrayIterator<T> {
 	var array: Array<T>;
 	var i: Int = 0;
 	
-	public function new(array: Array<T>)
+	inline public function new(array: Array<T>)
 		this.array = array;
 	
-	public function next(): T
+	inline public function next(): T
 		return array[i++];
 		
-	public function hasNext(): Bool
+	inline public function hasNext(): Bool
 		return i < array.length;
 	
 }
