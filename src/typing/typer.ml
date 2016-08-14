@@ -5373,6 +5373,9 @@ let rec create com =
 			| TClassDecl ({cl_path = ([],"Array")} as c) ->
 				ctx.t.tarray <- (fun t -> TInst (c,[t]));
 				raise Exit
+			| TAbstractDecl ({a_path = ([],"Array")} as c) -> 
+				ctx.t.tarray <- (fun t -> TAbstract (c,[t]));
+				raise Exit
 			| _ -> ()
 		)) m.m_types;
 		assert false

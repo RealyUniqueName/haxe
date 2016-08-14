@@ -19,7 +19,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-@:coreApi class Reflect {
+class Reflect {
 
 	public inline static function hasField( o : Dynamic, field : String ) : Bool {
 		return untyped __call__("_hx_has_field", o, field);

@@ -32,7 +32,7 @@ enum ValueType {
 	TUnknown;
 }
 
-@:coreApi class Type {
+class Type {
 
 	public static function getClass<T>( o : T ) : Class<T> untyped {
 		if(o == null) return null;
@@ -195,10 +195,10 @@ enum ValueType {
 
 	public static function typeof( v : Dynamic ) : ValueType untyped {
 		if(v == null) return TNull;
-		if(__call__("is_array", v)) {
+		/*if(__call__("is_array", v)) {
 			if(__call__("is_callable", v)) return TFunction;
 			return TClass(Array);
-		}
+		}*/
 		if(__call__("is_string", v)) {
 			if(__call__("_hx_is_lambda", v)) return TFunction;
 			return TClass(String);

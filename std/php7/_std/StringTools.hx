@@ -19,7 +19,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-@:coreApi class StringTools {
+class StringTools {
 
 	public inline static function urlEncode( s : String ) : String untyped {
 		return __call__("rawurlencode", s);
