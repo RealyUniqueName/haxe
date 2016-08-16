@@ -249,8 +249,8 @@ private class HxEnum {
 		return instance;
 	}
 
-	public function new(constructor:String, arguments:NativeArray = null) : Void {
+	public function new(constructor:String, arguments:NativeArrayI<Dynamic> = null) : Void {
 		this.constructor = constructor;
-		this.arguments = (arguments == null ? [] : arguments.toHaxeArray());
+		this.arguments = (arguments == null ? [] : arguments);
 	}
 }
