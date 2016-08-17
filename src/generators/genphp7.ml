@@ -11,6 +11,16 @@ open Meta
 let debug = ref false
 
 (**
+	Get list of keys in Hashtbl
+*)
+let hashtbl_keys tbl = Hashtbl.fold (fun key _ lst -> key :: lst) tbl []
+
+(**
+	@return List of items in `list1` which `list2` does not contain
+*)
+let diff_lists list1 list2 = List.filter (fun x -> not (List.mem x list2)) list1
+
+(**
 	Type path for native PHP Exception class
 *)
 let native_exception_path = ([], "Exception")
@@ -81,6 +91,14 @@ let need_parenthesis_for_binop current parent =
 			| (OpDiv, OpAdd) -> false
 			| (OpDiv, OpSub) -> false
 			| _ -> true
+
+(**
+	@return (arguments_list, return_type)
+*)
+let get_function_signature (field:tclass_field) : (string * bool * Type.t) list * Type.t =
+	match follow field.cf_type with
+		| TFun (args, return_type) -> (args, return_type)
+		| _ -> fail field.cf_pos __POS__
 
 (**
 	Check if `target` is 100% guaranteed to be a scalar type in PHP.
@@ -455,6 +473,62 @@ let clear_wrappers () =
 	Hashtbl.clear abstracts
 
 (**
+	Class to simplify collecting lists of declared and used local vars.
+	Collected data is needed to generate closures correctly.
+*)
+class local_vars =
+	object (self)
+		(** Hashtbl to collect local var used in current scope *)
+		val mutable used_locals = [Hashtbl.create 100]
+		(** Hashtbl to collect local vars declared in current scope *)
+		val mutable declared_locals = [Hashtbl.create 100]
+		(**
+			Clear collected data
+		*)
+		method clear : unit =
+			used_locals <- [Hashtbl.create 100];
+			declared_locals <- [Hashtbl.create 100]
+		(**
+			This method should be called upone entering deeper scope.
+			E.g. right before processing a closure. Just before closure arguments handling.
+		*)
+		method dive : unit =
+			used_locals <- (Hashtbl.create 100) :: used_locals;
+			declared_locals <- (Hashtbl.create 100) :: declared_locals
+		(**
+			This method should be called right after leaving a scope.
+			@return List of vars names used in finished scope, but declared in higher scopes
+		*)
+		method pop : string list =
+			match used_locals with
+				| [] -> assert false
+				| used :: rest_used ->
+					match declared_locals with
+						| [] -> assert false
+						| declared :: rest_declared ->
+							let higher_vars = diff_lists (hashtbl_keys used) (hashtbl_keys declared) in
+							used_locals <- rest_used;
+							declared_locals <- rest_declared;
+							List.iter self#used higher_vars;
+							higher_vars
+		(**
+			Specify local var name declared in current scope
+		*)
+		method declared (name:string) : unit =
+			match declared_locals with
+				| [] -> assert false
+				| current :: _ -> Hashtbl.replace current name name
+		(**
+			Specify local var name used in current scope
+		*)
+		method used (name:string) : unit =
+			match used_locals with
+				| [] -> assert false
+				| current :: _ -> Hashtbl.replace current name name
+
+	end
+
+(**
 	Base class for type builders
 *)
 class virtual type_builder ctx wrapper =
@@ -466,15 +540,15 @@ class virtual type_builder ctx wrapper =
 		(** List of types for "use" section *)
 		val use_table = Hashtbl.create 50
 		(** Output buffer *)
-		val buffer = Buffer.create 1024
+		val mutable buffer = Buffer.create 1024
 		(** Cache for generated conent *)
 		val mutable contents = ""
 		(** Intendation used for each line written *)
 		val mutable indentation = ""
-		(**
-			Expressions nesting. E.g. "if(callFn(ident))" will be represented as [ident, callFn, if]
-		*)
+		(** Expressions nesting. E.g. "if(callFn(ident))" will be represented as [ident, callFn, if] *)
 		val mutable expr_hierarchy : texpr list = []
+		(** *)
+		val vars = new local_vars
 		(**
 			Get PHP namespace path
 		*)
@@ -617,6 +691,7 @@ class virtual type_builder ctx wrapper =
 						| ([],"Bool") -> "bool"
 						| ([],"Void") -> "void"
 						| ([], "Class") -> self#use hxclass_type_path
+						| _ when Meta.has Meta.CoreType abstr.a_meta -> "mixed"
 						| _ -> self#use_t abstr.a_this
 		(**
 			Indicates whether current expression nesting level is a top level of a block
@@ -763,7 +838,9 @@ class virtual type_builder ctx wrapper =
 			expr_hierarchy <- expr :: expr_hierarchy;
 			(match expr.eexpr with
 				| TConst const -> self#write_expr_const const
-				| TLocal var -> self#write ("$" ^ var.v_name)
+				| TLocal var ->
+					vars#used var.v_name;
+					self#write ("$" ^ var.v_name)
 				| TArray (target, index) -> self#write_expr_array_access target index
 				| TBinop (operation, expr1, expr2) -> self#write_expr_binop operation expr1 expr2
 				| TField (fexpr, access) when is_php_global expr -> self#write_expr_php_global expr
@@ -815,13 +892,18 @@ class virtual type_builder ctx wrapper =
 			self#write_statement "if ($called) return";
 			self#write_statement "$called = true";
 			self#write "\n";
+			vars#clear;
 			(match wrapper#get_magic_init with
 				| None -> ()
 				| Some expr ->
 					self#write_indentation;
-					self#write_as_block ~inline:true expr
+					let fake_block = { expr with eexpr = TBlock [expr] } in
+					expr_hierarchy <- fake_block :: expr_hierarchy;
+					self#write_as_block ~inline:true expr;
+					expr_hierarchy <- List.tl expr_hierarchy
 			);
 			self#write "\n";
+			vars#clear;
 			self#write_hx_init_body;
 			self#indent 1;
 			self#write_line "}"
@@ -869,6 +951,7 @@ class virtual type_builder ctx wrapper =
 			Writes TVar to output buffer
 		*)
 		method private write_expr_var var expr =
+			vars#declared var.v_name;
 			self#write ("$" ^ var.v_name ^ " = ");
 			match expr with
 				| None -> self#write "null"
@@ -879,25 +962,46 @@ class virtual type_builder ctx wrapper =
 		method private write_expr_function ?name func =
 			let write_arg arg =
 				match arg with
-					| ({ v_name = arg_name }, None) -> self#write ("$" ^ arg_name)
+					| ({ v_name = arg_name }, None) ->
+						vars#declared arg_name;
+						self#write ("$" ^ arg_name)
 					| ({ v_name = arg_name }, Some const) ->
+						vars#declared arg_name;
 						self#write ("$" ^ arg_name ^ " = ");
 						self#write_expr_const const
 			in
 			let str_name = match name with None -> "" | Some str -> str ^ " " in
+			let is_closure = str_name = "" in (* Closures don't have names *)
+			if is_closure then vars#dive;
 			self#write ("function " ^ str_name ^ "(");
 			write_args buffer write_arg func.tf_args;
 			self#write ")";
-			(* Closures don't have names. Bracket on same line for closures *)
-			if str_name = "" then
-				self#write " "
-			(* Only methods can be named functions. We want bracket on new line for methods. *)
-			else begin
-				self#indent 1;
-				self#write "\n";
-				self#write_indentation
-			end;
-			self#write_expr (inject_defaults ctx func)
+			if is_closure then
+				begin
+					(* Generate closure body to separate buffer *)
+					let original_buffer = buffer in
+					buffer <- Buffer.create 256;
+					self#write_expr (inject_defaults ctx func);
+					let body = Buffer.contents buffer in
+					buffer <- original_buffer;
+					(* Use captured local vars *)
+					let used_vars = vars#pop in
+					self#write " ";
+					if List.length used_vars > 0 then begin
+						self#write " use (";
+						write_args buffer (fun name -> self#write ("&$" ^ name)) used_vars;
+						self#write ") "
+					end;
+					self#write body
+				end
+			else
+				begin
+					(* We want bracket on new line for methods. *)
+					self#indent 1;
+					self#write "\n";
+					self#write_indentation;
+					self#write_expr (inject_defaults ctx func)
+				end
 		(**
 			Writes TBlock to output buffer
 		*)
@@ -981,7 +1085,7 @@ class virtual type_builder ctx wrapper =
 					| TInst ({ cl_path = ([], "String") }, _) -> self#write "if (is_string($__hx__real_e)) {\n"
 					| TAbstract ({ a_path = ([], "Float") }, _) -> self#write "if (is_float($__hx__real_e)) {\n"
 					| TAbstract ({ a_path = ([], "Int") }, _) -> self#write "if (is_int($__hx__real_e)) {\n"
-					| TAbstract ({ a_path = ([], "Bool") }, _) -> self#write "if (is_float($__hx__real_e)) {\n"
+					| TAbstract ({ a_path = ([], "Bool") }, _) -> self#write "if (is_bool($__hx__real_e)) {\n"
 					| TDynamic _ ->
 						dynamic := true;
 						catching_dynamic := true;
@@ -1192,11 +1296,62 @@ class virtual type_builder ctx wrapper =
 				| (_, FStatic (_, { cf_name = name; cf_kind = Method _ })) -> write_access ("::" ^ name)
 				| (_, FAnon { cf_name = name }) -> write_access ("->" ^ name)
 				(* | FDynamic of string *)
-				(* | FClosure of (tclass * tparams) option * tclass_field (* None class = TAnon *) *)
+				| (_, FClosure (tcls, field)) -> self#write_expr_field_closure tcls field expr
 				| (_, FEnum (_, field)) ->
 					write_access ("::" ^ field.ef_name);
 					if not (is_enum_constructor_with_args field) then self#write "()"
 				| _ -> fail self#pos __POS__
+		(**
+			Writes FClosure field access to output buffer
+		*)
+		method private write_expr_field_closure tcls field expr =
+			(* backup originl output buffer *)
+			let original_buffer = buffer in
+			(* generate feild access expression string *)
+			buffer <- Buffer.create 128;
+			vars#dive;
+			self#write " { return ";
+			(match expr.eexpr with
+				| TField (_, FClosure _)  -> self#write_expr (parenthesis expr)
+				| TField _  -> self#write_expr expr
+				| TLocal _ -> self#write_expr expr
+				| TConst TThis -> self#write_expr expr
+				| _ -> self#write_expr (parenthesis expr)
+			);
+			self#write ("->" ^ field.cf_name ^ "(");
+			let access_str = Buffer.contents buffer
+			and used_vars = vars#pop in
+			(* Restore original output buffer and local vars *)
+			buffer <- original_buffer;
+			(* Write whole closure to output buffer *)
+			let (args, return_type) = get_function_signature field
+			and write_arg with_optionals (arg_name, optional, _) =
+				self#write ("$" ^ arg_name ^ (if with_optionals && optional then " = null" else ""))
+			in
+			let args = (** Make sure arguments will not shadow local vars declared in higher scopes *)
+				List.map
+					(fun (arg_name, optional, arg_type) ->
+						if List.mem arg_name used_vars then
+							("__hx__" ^ arg_name, optional, arg_type)
+						else
+							(arg_name, optional, arg_type)
+					)
+					args
+			in
+			self#write "function (";
+			write_args buffer (write_arg true) args;
+			self#write ")";
+			(match used_vars with
+				| [] -> ()
+				| _ ->
+					self#write " use (";
+					write_args buffer (fun name -> self#write ("&$" ^ name)) used_vars;
+					self#write ")"
+			);
+			self#write access_str;
+			write_args buffer (write_arg false) args;
+			self#write "); }"
+
 		(**
 			Write anonymous object declaration to output buffer
 		*)
@@ -1560,14 +1715,10 @@ class class_builder ctx (cls:tclass) =
 			Writes method to output buffer
 		*)
 		method private write_method field is_static =
-			(* self#write_empty_lines; *)
+			vars#clear;
 			self#indent 1;
-			let (args, return_type) =
-				(match follow field.cf_type with
-					| TFun (args, return_type) -> (args, return_type)
-					| _ -> failwith ("Invalid signature of method " ^ field.cf_name)
-				)
-			in
+			let (args, return_type) = get_function_signature field in
+			List.iter (fun (arg_name, _, _) -> vars#declared arg_name) args;
 			self#write_doc (DocMethod (args, return_type, field.cf_doc));
 			self#write_indentation;
 			if is_static then self#write "static ";

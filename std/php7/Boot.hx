@@ -28,6 +28,7 @@ using StringTools;
 using php7.Lib;
 using php7.Global;
 
+
 /**
 	Various Haxe->PHP compatibility utilities
 **/
@@ -39,6 +40,9 @@ class Boot {
 	**/
 	static function __init__() {
 		Global.error_reporting(Const.E_ALL);
+		if (Global.phpversion() < "7.0.0") {
+			Global.class_alias("\\Exception", "\\Throwable");
+		}
 	}
 
 	/**
@@ -82,7 +86,7 @@ class Boot {
 					if (untyped __php__("$value instanceof $hxClass->getClassName()")) {
 						var valueType : HxClass = cast value;
 						var hxEnum : HxClass = cast HxEnum;
-						return valueType.getClassName().is_subclass_of(hxEnum.getClassName());
+						return Global.is_subclass_of(valueType.getClassName(), hxEnum.getClassName());
 					}
 				}
 			case _:
@@ -169,7 +173,7 @@ private class HxClass {
 		switch (phpClassName) {
 			case '\\Int':
 				if (isNumber(value)) {
-					return value.intval();
+					return Global.intval(value);
 				}
 			case '\\Float':
 				if (isNumber(value)) {
