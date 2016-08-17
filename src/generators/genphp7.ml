@@ -30,6 +30,10 @@ let hxenum_type_path = (["php7"; "_Boot"], "HxEnum")
 	Type path of the implementation class for `Class<Dynamic>`
 *)
 let hxclass_type_path = (["php7"; "_Boot"], "HxClass")
+(**
+	Type path of the implementation class for `Array<T>`
+*)
+let hxarray_type_path = ([], "HxArray")
 
 (**
 	Resolve real type (bypass abstracts and typedefs)
@@ -837,7 +841,8 @@ class virtual type_builder ctx wrapper =
 			Writes TArrayDecl to output buffer
 		*)
 		method private write_expr_array_decl exprs =
-			match exprs with
+		  self#write ((self#use hxarray_type_path) ^ "::wrap(");
+		  (match exprs with
 				| [] -> self#write "[]"
 				| [expr] ->
 					self#write "[";
@@ -850,6 +855,8 @@ class virtual type_builder ctx wrapper =
 					self#indent_less;
 					self#write_indentation;
 					self#write "]"
+				);
+			self#write ")"
 		(**
 			Writes TArray to output buffer
 		*)
@@ -857,7 +864,7 @@ class virtual type_builder ctx wrapper =
 			self#write_expr target;
 			self#write "[";
 			self#write_expr index;
-			self#write "]"
+			self#write "]";
 		(**
 			Writes TVar to output buffer
 		*)
