@@ -24,17 +24,17 @@ package php7;
 import haxe.extern.Rest;
 import haxe.extern.EitherType;
 
-//@:coreType
-@:arrayAccess
-abstract NativeArray(Dynamic) {
+@:coreType
+//@:arrayAccess
+abstract NativeArray {
 
-  @:arrayAccess
+  /*@:arrayAccess
   inline function get<T>(key:EitherType<Int,String>):T
     return this[key];
 
   @:arrayAccess
   inline function set<T>(key:EitherType<Int,String>, val:T)
-    this[key] = val;
+    this[key] = val;*/
 
   public inline function count():Int
     return Arr.count(this);
@@ -80,17 +80,16 @@ abstract NativeArray(Dynamic) {
 
 @:forward
 abstract NativeArrayI<T>(NativeArray) from NativeArray to NativeArray {
-
   public inline function new()
     this = untyped __php__("[]");
 
   @:arrayAccess
   inline function get(idx:Int):T
-    return this[idx];
+    return untyped this[idx];
 
   @:arrayAccess
   inline function set(idx:Int, val:T)
-    this[idx] = val;
+    untyped this[idx] = val;
 
   @:to
   inline function toHaxeArray():Array<T>
@@ -99,14 +98,10 @@ abstract NativeArrayI<T>(NativeArray) from NativeArray to NativeArray {
   @:from
   static inline function fromHaxeArray<T>(a:Array<T>):NativeArrayI<T>
     return @:privateAccess a.arr;
-
 }
 
 @:phpGlobal
 private extern class Arr {
-  @:native("array")
-  static function create():NativeArray;
-
   @:native("\\count")
   static function count(arr:NativeArray, ?mode:Int = 0):Int;
 
