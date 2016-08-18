@@ -253,7 +253,7 @@ private class HxEnum {
 		return instance;
 	}
 
-	public function new(constructor:String, arguments:NativeArrayI<Dynamic> = null) : Void {
+	public function new(constructor:String, arguments:NativeIndexedArray<Dynamic> = null) : Void {
 		this.constructor = constructor;
 		this.arguments = (arguments == null ? [] : arguments);
 	}

@@ -923,8 +923,8 @@ class virtual type_builder ctx wrapper =
 			Writes TArrayDecl to output buffer
 		*)
 		method private write_expr_array_decl exprs =
-		  self#write ((self#use hxarray_type_path) ^ "::wrap(");
-		  (match exprs with
+			self#write ((self#use hxarray_type_path) ^ "::wrap(");
+			(match exprs with
 				| [] -> self#write "[]"
 				| [expr] ->
 					self#write "[";

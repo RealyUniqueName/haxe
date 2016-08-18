@@ -19,16 +19,16 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-import php7.NativeArray;
+import php7.NativeIndexedArray;
 
 @:coreApi
 @:native("HxArray")
 class Array<T> {
 	public var length(default, null):Int;
-	var arr:NativeArrayI<T>;
+	var arr:NativeIndexedArray<T>;
 
 	public function new() {
-		arr = new NativeArrayI<T>();
+		arr = new NativeIndexedArray<T>();
 		length = 0;
 	}
 
@@ -45,13 +45,30 @@ class Array<T> {
 	}
 
 	public function indexOf(x:T, ?fromIndex:Int):Int {
-		if (fromIndex == null) fromIndex = 0;
+		/*if (fromIndex == null) fromIndex = 0;
+		if (fromIndex < 0) fromIndex += length - 1;
+		if (fromIndex < 0) fromIndex = 0;
 		while (fromIndex < length) {
 			if (arr[fromIndex] == x)
 				return fromIndex;
 			fromIndex++;
 		}
-		return -1;
+		return -1;*/
+		// maybe better?
+		var idx = arr.search(x);
+		if (idx == false)
+			return -1;
+		if (fromIndex != null) {
+			if (fromIndex >= length)
+				return -1;
+			if (fromIndex < 0) fromIndex += length - 1;
+			if (fromIndex > 0) {
+				idx -= fromIndex;
+				if ((idx:Int) < 0)
+					return -1;
+			}
+		}
+		return idx;
 	}
 
 	public function insert(pos:Int, x:T):Void {
@@ -60,7 +77,7 @@ class Array<T> {
 	}
 
 	public function iterator():Iterator<T> {
-		return null; //TODO
+		return new ArrayIterator(arr);
 	}
 
 	public function join(sep:String):String {
@@ -68,7 +85,8 @@ class Array<T> {
 	}
 
 	public function lastIndexOf(x:T, ?fromIndex:Int):Int {
-		if (fromIndex == null) fromIndex = length;
+		if (fromIndex == null || fromIndex >= length) fromIndex = length - 1;
+		if (fromIndex < 0) fromIndex += length - 1;
 		while (fromIndex >= 0) {
 			if (arr[fromIndex] == x)
 				return fromIndex;
@@ -130,11 +148,29 @@ class Array<T> {
 		return "array"; //TODO
 	}
 
-	static function wrap<T>(arr:NativeArrayI<T>):Array<T> {
+	static function wrap<T>(arr:NativeIndexedArray<T>):Array<T> {
 		var a = new Array();
 		a.arr = arr;
 		a.length = arr.count();
 		return a;
 	}
 
+}
+
+private class ArrayIterator<T> {
+	var idx:Int;
+	var arr:NativeIndexedArray<T>;
+
+	public inline function new(arr:NativeIndexedArray<T>) {
+		arr = this.arr = arr;
+		idx = 0;
+	}
+
+	public inline function hasNext():Bool {
+		return idx < arr.count();
+	}
+
+	public inline function next():T {
+		return arr[idx++];
+	}
 }

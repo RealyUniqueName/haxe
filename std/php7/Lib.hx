@@ -85,7 +85,7 @@ class Lib {
 		return untyped __call__("fpassthru", __call__("fopen", file,  "r"));
 	}
 
-	/*public static function toPhpArray(a : Array<Dynamic>) : NativeArray {
+	public static function toPhpArray(a : Array<Dynamic>) : NativeArray {
 		throw "Not implemented";
 	}
 
@@ -107,7 +107,7 @@ class Lib {
 
 	public static function associativeArrayOfObject(ob : Dynamic) : NativeArray {
 		throw "Not implemented";
-	}*/
+	}
 
 	/**
 	 * See the documentation for the equivalent PHP function for details on usage:
