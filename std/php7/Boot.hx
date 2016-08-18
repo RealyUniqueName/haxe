@@ -25,6 +25,7 @@ import php7.Const;
 import php7.NativeArray;
 
 using StringTools;
+using php7.Lib;
 using php7.Global;
 
 

@@ -36,7 +36,7 @@
 	public static function getProperty( o : Dynamic, field : String ) : Dynamic {
 		if (null == o) return null;
 		var cls : String = Std.is(o, Class) ? untyped __php__("$o->__tname__") : untyped __call__("get_class", o);
-		var cls_vars : php7.NativeArray = untyped __call__("get_class_vars", cls);
+		var cls_vars = untyped __call__("get_class_vars", cls);
 		if (untyped __php__("isset($cls_vars['__properties__']) && isset($cls_vars['__properties__']['get_'.$field]) && ($field = $cls_vars['__properties__']['get_'.$field])"))
 			return untyped __php__("$o->$field()");
 		else
@@ -46,7 +46,7 @@
 	public static function setProperty( o : Dynamic, field : String, value : Dynamic ) : Void {
 		if (null == o) return null;
 		var cls : String = Std.is(o, Class) ? untyped __php__("$o->__tname__") : untyped __call__("get_class", o);
-		var cls_vars : php7.NativeArray = untyped __call__("get_class_vars", cls);
+		var cls_vars  = untyped __call__("get_class_vars", cls);
 		if (untyped __php__("isset($cls_vars['__properties__']) && isset($cls_vars['__properties__']['set_'.$field]) && ($field = $cls_vars['__properties__']['set_'.$field])"))
 			untyped __php__("$o->$field($value)");
 		else
