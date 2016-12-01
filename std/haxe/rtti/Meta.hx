@@ -59,7 +59,7 @@ class Meta {
 
 	private static function getMeta(t:Dynamic):MetaObject
 	{
-#if php7
+#if (php && php7)
 		return php.Boot.getMeta(t.phpClassName);
 #elseif (java || cs || php || (flash && as3))
 		var ret = Reflect.field(t, "__meta__");
