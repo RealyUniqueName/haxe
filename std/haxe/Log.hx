@@ -62,7 +62,7 @@ class Log {
 			}
 		#elseif js
 			untyped js.Boot.__trace(v,infos);
-		#elseif php7
+		#elseif (php && php7)
 			php.Boot.trace(v, infos);
 		#elseif php
 			if (infos!=null && infos.customParams!=null) {
