@@ -37,7 +37,7 @@ install:
     # Install neko
     - choco install neko --prerelease --ignore-dependencies -s 'https://ci.appveyor.com/nuget/neko' -y
     - choco install php --ignore-dependencies
-    - echo extension=php_mysql.dll >> C:\tools\php\php.ini
+    - echo extension=php_mysqli.dll >> C:\tools\php\php.ini
     - echo extension=php_sqlite3.dll >> C:\tools\php\php.ini
     - RefreshEnv
     # do not use chocolatey's shim, which is buggy when processing arguments
