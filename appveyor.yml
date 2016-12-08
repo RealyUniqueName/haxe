@@ -36,7 +36,7 @@ install:
     - '%CYG_ROOT%/bin/bash -lc "opam install camlp4 --yes"'
     # Install neko
     - choco install neko --prerelease --ignore-dependencies -s 'https://ci.appveyor.com/nuget/neko' -y
-    - choco install php
+    - choco install php --ignore-dependencies
     - RefreshEnv
     # do not use chocolatey's shim, which is buggy when processing arguments
     # see https://github.com/chocolatey/shimgen/issues/27
