@@ -10,7 +10,7 @@ environment:
         MYSQL_USER: root
         MYSQL_PASSWORD: Password12!
     matrix:
-        - TEST: "neko,python,cs,java,macro,php7"
+        - TEST: "neko,python,cs,java,macro,php7,php"
         - TEST: "cpp"
 
 services:
