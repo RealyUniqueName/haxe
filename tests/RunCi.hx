@@ -96,6 +96,20 @@ class RunCi {
 			fail();
 	}
 
+	static function runUnitTests(compilerArgs:Array<String>, run:Void->Void) {
+		if (ci == null && Sys.getEnv('DCE_DEBUG_MATRIX') != 'true') {
+			runCommand("haxe", compilerArgs.concat(['-debug', '-dce', 'full']));
+			run();
+		} else {
+			runCommand("haxe", compilerArgs.concat(['-dce', 'no']));
+			run();
+			runCommand("haxe", compilerArgs.concat(['-debug']));
+			run();
+			runCommand("haxe", compilerArgs.concat(['-dce', 'full']));
+			run();
+		}
+	}
+
 	static function isAptPackageInstalled(aptPackage:String):Bool {
 		return commandSucceed("dpkg-query", ["-W", "-f='${Status}'", aptPackage]);
 	}
@@ -713,8 +727,7 @@ class RunCi {
 						runCommand("haxe", ["compile-each.hxml", "--run", "Main"]);
 					case Neko:
 						getSpodDependencies();
-						runCommand("haxe", ["compile-neko.hxml", "-D", "dump", "-D", "dump_ignore_var_ids"].concat(args));
-						runCommand("neko", ["bin/unit.n"]);
+						runUnitTests(["compile-neko.hxml", "-D", "dump", "-D", "dump_ignore_var_ids"].concat(args), runCommand.bind("neko", ["bin/unit.n"]));
 
 						changeDirectory(sysDir);
 						runCommand("haxe", ["compile-neko.hxml"]);
@@ -723,8 +736,7 @@ class RunCi {
 						if (systemName == "Linux") {
 							getSpodDependencies();
 							runCommand("phpenv", ["global", "7.0"], false, true);
-							runCommand("haxe", ["compile-php7.hxml"].concat(args));
-							runCommand("php", ["bin/php7/index.php"]);
+							runUnitTests(["compile-php7.hxml"].concat(args), runCommand.bind("php", ["bin/php7/index.php"]));
 
 							changeDirectory(sysDir);
 							runCommand("haxe", ["compile-php7.hxml"]);
@@ -733,8 +745,7 @@ class RunCi {
 					case Php:
 							getSpodDependencies();
 							getPhpDependencies();
-							runCommand("haxe", ["compile-php.hxml"].concat(args));
-							runCommand("php", ["bin/php/index.php"]);
+							runUnitTests(["compile-php.hxml"].concat(args), runCommand.bind("php", ["bin/php/index.php"]));
 
 							changeDirectory(sysDir);
 							runCommand("haxe", ["compile-php.hxml"]);
@@ -742,10 +753,14 @@ class RunCi {
 					case Python:
 						var pys = getPythonDependencies();
 
-						runCommand("haxe", ["compile-python.hxml"].concat(args));
-						for (py in pys) {
-							runCommand(py, ["bin/unit.py"]);
-						}
+						runUnitTests(
+							["compile-python.hxml"].concat(args),
+							function() {
+								for (py in pys) {
+									runCommand(py, ["bin/unit.py"]);
+								}
+							}
+						);
 
 						changeDirectory(sysDir);
 						runCommand("haxe", ["compile-python.hxml"]);
@@ -773,8 +788,7 @@ class RunCi {
 						  installLuaVersionDependencies(lv);
 
 						  changeDirectory(unitDir);
-						  runCommand("haxe", ["compile-lua.hxml"].concat(args));
-						  runCommand("lua", ["bin/unit.lua"]);
+						  runUnitTests(["compile-lua.hxml"].concat(args), runCommand.bind("lua", ["bin/unit.lua"]));
 
 						  changeDirectory(sysDir);
 						  runCommand("haxe", ["compile-lua.hxml"].concat(args));
@@ -783,8 +797,7 @@ class RunCi {
 					case Cpp:
 						getCppDependencies();
 						getSpodDependencies();
-						runCommand("haxe", ["compile-cpp.hxml", "-D", "HXCPP_M32"].concat(args));
-						runCpp("bin/cpp/TestMain-debug", []);
+						runUnitTests(["compile-cpp.hxml", "-D", "HXCPP_M32"].concat(args), runCpp.bind("bin/cpp/TestMain-debug", []));
 
 						switch (ci) {
 							case AppVeyor:
@@ -795,7 +808,7 @@ class RunCi {
 								runCpp("bin/cpp/TestMain-debug", []);
 
 								runCommand("haxe", ["compile-cppia-host.hxml"]);
-								runCommand("haxe", ["compile-cppia.hxml"]);
+								runCommand("haxe", ["compile-cppia.hxml", "-debug", "-dce", "full"]);
 								runCpp("bin/cppia/Host-debug", ["bin/unit.cppia"]);
 						}
 
@@ -819,7 +832,7 @@ class RunCi {
 							{
 								var extras = args.concat(es3).concat(unflatten).concat(classic);
 
-								runCommand("haxe", ["compile-js.hxml"].concat(extras));
+								runCommand("haxe", ["compile-js.hxml", "-debug", "-dce", "full"].concat(extras));
 
 								var output = if (extras.length > 0) {
 									"bin/js/" + extras.join("") + "/unit.js";
@@ -875,11 +888,7 @@ class RunCi {
 					case Java:
 						getSpodDependencies();
 						getJavaDependencies();
-						runCommand("haxe", ["compile-java.hxml"].concat(args));
-						runCommand("java", ["-jar", "bin/java/TestMain-Debug.jar"]);
-
-						runCommand("haxe", ["compile-java.hxml","-dce","no"].concat(args));
-						runCommand("java", ["-jar", "bin/java/TestMain-Debug.jar"]);
+						runUnitTests(["compile-java.hxml"].concat(args), runCommand.bind("java", ["-jar", "bin/java/TestMain-Debug.jar"]));
 
 						changeDirectory(sysDir);
 						runCommand("haxe", ["compile-java.hxml"]);
@@ -916,14 +925,14 @@ class RunCi {
 						for (erasegenerics in [[], ["-D", "erase_generics"]])
 						{
 							var extras = fastcast.concat(erasegenerics).concat(noroot);
-							runCommand("haxe", ['compile-cs$compl.hxml'].concat(extras));
+							runCommand("haxe", ['compile-cs$compl.hxml','-debug','-dce','full'].concat(extras));
 							runCs("bin/cs/bin/TestMain-Debug.exe");
 
-							runCommand("haxe", ['compile-cs-unsafe$compl.hxml'].concat(extras));
+							runCommand("haxe", ['compile-cs-unsafe$compl.hxml','-debug','-dce','full'].concat(extras));
 							runCs("bin/cs_unsafe/bin/TestMain-Debug.exe");
 						}
 
-						runCommand("haxe", ['compile-cs$compl.hxml','-dce','no']);
+						runCommand("haxe", ['compile-cs$compl.hxml','-dce','no','-debug']);
 						runCs("bin/cs/bin/TestMain-Debug.exe");
 
 						changeDirectory(sysDir);
@@ -939,10 +948,14 @@ class RunCi {
 
 					case Flash9:
 						setupFlashPlayerDebugger();
-						runCommand("haxe", ["compile-flash9.hxml", "-D", "fdb", "-D", "dump", "-D", "dump_ignore_var_ids"].concat(args));
-						var success = runFlash("bin/unit9.swf");
-						if (!success)
-							fail();
+						runUnitTests(
+							["compile-flash9.hxml", "-D", "fdb", "-D", "dump", "-D", "dump_ignore_var_ids"].concat(args),
+							function() {
+								var success = runFlash("bin/unit9.swf");
+								if (!success)
+									fail();
+							}
+						);
 					case As3:
 						setupFlashPlayerDebugger();
 
@@ -963,10 +976,14 @@ class RunCi {
 							runCommand("mxmlc", ["--version"]);
 						}
 
-						runCommand("haxe", ["compile-as3.hxml", "-D", "fdb"].concat(args));
-						var success = runFlash("bin/unit9_as3.swf");
-						if (!success)
-							fail();
+						runUnitTests(
+							["compile-as3.hxml", "-D", "fdb"].concat(args),
+							function() {
+								var success = runFlash("bin/unit9_as3.swf");
+								if (!success)
+									fail();
+							}
+						);
 					case Hl:
 						runCommand("haxe", ["compile-hl.hxml"]);
 					case t:
