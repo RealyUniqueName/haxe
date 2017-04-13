@@ -797,8 +797,7 @@ class RunCi {
 					case Cpp:
 						getCppDependencies();
 						getSpodDependencies();
-						runCommand("haxe", ["compile-cpp.hxml", "-D", "HXCPP_M32"].concat(args));
-						runCpp("bin/cpp/TestMain-debug", []);
+						runUnitTests(["compile-cpp.hxml", "-D", "HXCPP_M32"].concat(args), runCpp.bind("bin/cpp/TestMain-debug", []));
 
 						switch (ci) {
 							case AppVeyor:
@@ -889,6 +888,7 @@ class RunCi {
 					case Java:
 						getSpodDependencies();
 						getJavaDependencies();
+
 						runCommand("haxe", ["compile-java.hxml"].concat(args));
 						runCommand("java", ["-jar", "bin/java/TestMain-Debug.jar"]);
 
