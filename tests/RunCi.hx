@@ -889,7 +889,7 @@ class RunCi {
 						getSpodDependencies();
 						getJavaDependencies();
 
-						runCommand("haxe", ["compile-java.hxml"].concat(args));
+						runCommand("haxe", ["compile-java.hxml", "-debug", "-dce", "full"].concat(args));
 						runCommand("java", ["-jar", "bin/java/TestMain-Debug.jar"]);
 
 						changeDirectory(sysDir);
