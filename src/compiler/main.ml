@@ -107,52 +107,56 @@ let expand_env ?(h=None) path  =
 			"%" ^ key ^ "%"
 	) path
 
-let add_libs com libs =
-	let call_haxelib() =
-		let t = Common.timer ["haxelib"] in
-		let cmd = "haxelib path " ^ String.concat " " libs in
-		let pin, pout, perr = Unix.open_process_full cmd (Unix.environment()) in
-		let lines = Std.input_list pin in
-		let err = Std.input_list perr in
-		let ret = Unix.close_process_full (pin,pout,perr) in
-		if ret <> Unix.WEXITED 0 then failwith (match lines, err with
-			| [], [] -> "Failed to call haxelib (command not found ?)"
-			| [], [s] when ExtString.String.ends_with (ExtString.String.strip s) "Module not found : path" -> "The haxelib command has been strip'ed, please install it again"
-			| _ -> String.concat "\n" (lines@err));
-		t();
-		lines
-	in
-	match libs with
-	| [] -> []
-	| _ ->
-		let lines = match CompilationServer.get() with
-			| Some cs ->
-				(try
-					(* if we are compiling, really call haxelib since library path might have changed *)
-					if not com.display.dms_display then raise Not_found;
-					CompilationServer.find_haxelib cs libs
-				with Not_found ->
-					let lines = call_haxelib() in
-					CompilationServer.cache_haxelib cs libs lines;
-					lines)
-			| _ -> call_haxelib()
+let get_libs com libs : (string list * string list) =
+		let call_haxelib() =
+			let t = Common.timer ["haxelib"] in
+			let cmd = "haxelib path " ^ String.concat " " libs in
+			let pin, pout, perr = Unix.open_process_full cmd (Unix.environment()) in
+			let lines = Std.input_list pin in
+			let err = Std.input_list perr in
+			let ret = Unix.close_process_full (pin,pout,perr) in
+			if ret <> Unix.WEXITED 0 then failwith (match lines, err with
+				| [], [] -> "Failed to call haxelib (command not found ?)"
+				| [], [s] when ExtString.String.ends_with (ExtString.String.strip s) "Module not found : path" -> "The haxelib command has been strip'ed, please install it again"
+				| _ -> String.concat "\n" (lines@err));
+			t();
+			lines
 		in
-		let extra_args = ref [] in
-		let lines = List.fold_left (fun acc l ->
-			let l = ExtString.String.strip l in
-			if l = "" then acc else
-			if l.[0] <> '-' then l :: acc else
-			match (try ExtString.String.split l " " with _ -> l, "") with
-			| ("-L",dir) ->
-				com.neko_libs <- String.sub l 3 (String.length l - 3) :: com.neko_libs;
-				acc
-			| param, value ->
-				extra_args := param :: !extra_args;
-				if value <> "" then extra_args := value :: !extra_args;
-				acc
-		) [] lines in
-		com.class_path <- lines @ com.class_path;
-		List.rev !extra_args
+		match libs with
+		| [] -> ([], [])
+		| _ ->
+			let lines = match CompilationServer.get() with
+				| Some cs ->
+					(try
+						(* if we are compiling, really call haxelib since library path might have changed *)
+						if not com.display.dms_display then raise Not_found;
+						CompilationServer.find_haxelib cs libs
+					with Not_found ->
+						let lines = call_haxelib() in
+						CompilationServer.cache_haxelib cs libs lines;
+						lines)
+				| _ -> call_haxelib()
+			in
+			let extra_args = ref [] in
+			let lines = List.fold_left (fun acc l ->
+				let l = ExtString.String.strip l in
+				if l = "" then acc else
+				if l.[0] <> '-' then l :: acc else
+				match (try ExtString.String.split l " " with _ -> l, "") with
+				| ("-L",dir) ->
+					com.neko_libs <- String.sub l 3 (String.length l - 3) :: com.neko_libs;
+					acc
+				| param, value ->
+					extra_args := param :: !extra_args;
+					if value <> "" then extra_args := value :: !extra_args;
+					acc
+			) [] lines in
+			(lines, List.rev !extra_args)
+
+let add_libs com libs =
+	let (paths, extra_args) = get_libs com libs in
+	com.class_path <- paths @ com.class_path;
+	extra_args
 
 let run_command ctx cmd =
 	let h = Hashtbl.create 0 in
@@ -458,7 +462,9 @@ try
 	if CompilationServer.runs() then com.run_command <- run_command ctx;
 	Parser.display_error := (fun e p -> com.error (Parser.error_msg e) p);
 	Parser.use_doc := !Common.display_default <> DMNone || (CompilationServer.runs());
-	com.class_path <- get_std_class_paths ();
+	(* com.class_path <- get_std_class_paths (); *)
+	let (std_path, std_extra_args) = get_libs com ["std"] in
+	com.class_path <- std_path;
 	com.std_path <- List.filter (fun p -> ExtString.String.ends_with p "std/" || ExtString.String.ends_with p "std\\") com.class_path;
 	let define f = Arg.Unit (fun () -> Common.define com f) in
 	let process_ref = ref (fun args -> ()) in
@@ -743,6 +749,7 @@ try
 	in
 	process_ref := process;
 	process ctx.com.args;
+	process std_extra_args;
 	process_libs();
 	if com.display.dms_display then begin
 		com.warning <- if com.display.dms_error_policy = EPCollect then (fun s p -> add_diagnostics_message com s p DisplayTypes.DiagnosticsSeverity.Warning) else message ctx;
