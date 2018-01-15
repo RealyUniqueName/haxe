@@ -14,8 +14,10 @@ environment:
           secure: ewwkKcjnSKl/Vtrz1SXmI6XKk1ENmJDyzm5YaR2wi03foRhTke29TvymB21rDTSl
     matrix:
         - ARCH: 64
-          TEST: "macro"
+          TEST: "neko,python,cs,java,php,macro"
           DEPLOY_NIGHTLIES: 1
+        - ARCH: 64
+          TEST: "cpp"
         - ARCH: 32
           TEST: "macro"
           DEPLOY_NIGHTLIES: 1
@@ -75,10 +77,10 @@ build_script:
     - haxelib setup "%HAXELIB_ROOT%"
 
 test_script:
-    - cd %APPVEYOR_BUILD_FOLDER%
+    - cd %APPVEYOR_BUILD_FOLDER%/tests/
     - haxe -version
-    - git clone https://github.com/RealyUniqueName/Safety.git
-    - PLUGIN=Safety/src/ml/safety make plugin
+    - haxe RunCi.hxml
 
 artifacts:
-    - path: 'Safety/src/ml/safety.cmxs'
+    - path: 'out/*.zip'
+    - path: '*.nupkg'
