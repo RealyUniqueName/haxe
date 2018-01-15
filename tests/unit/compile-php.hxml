@@ -1,3 +1,9 @@
 compile-each.hxml
 -main unit.TestMain
 -php bin/php
+-lib safety
+-D SAFETY=ALL
+# -D SAFETY_ENABLE_SAFE_NAVIGATION
+# -D SAFETY_DEBUG
+-D SAFETY_SILENT
+--times
