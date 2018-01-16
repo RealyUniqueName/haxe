@@ -77,10 +77,10 @@ build_script:
     - haxelib setup "%HAXELIB_ROOT%"
 
 test_script:
-    - cd %APPVEYOR_BUILD_FOLDER%/tests/
+    - cd %APPVEYOR_BUILD_FOLDER%/
     - haxe -version
-    - haxe RunCi.hxml
+    - git clone https://github.com/RealyUniqueName/Safety.git
+    - make PLUGIN Safety/src/ml/safety plugin
 
 artifacts:
-    - path: 'out/*.zip'
-    - path: '*.nupkg'
+    - path: 'Safety/src/ml/safety.cmxs'
