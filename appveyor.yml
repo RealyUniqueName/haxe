@@ -76,7 +76,7 @@ test_script:
     - cd %APPVEYOR_BUILD_FOLDER%/
     - haxe -version
     - git clone https://github.com/RealyUniqueName/Safety.git
-    - make PLUGIN Safety/src/ml/safety plugin
+    - '%CYG_ROOT%/bin/bash -lc "cd \"$OLDPWD\" && make PLUGIN=Safety/src/ml/safety -f Makefile.win plugin'
 
 artifacts:
     - path: 'Safety/src/ml/safety.cmxs'
