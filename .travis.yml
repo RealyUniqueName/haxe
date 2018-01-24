@@ -85,7 +85,7 @@ install_linux: &install_linux
   - opam install haxe --deps-only
   # Build haxe
   - git fetch --tags
-  - git checkout 4.0.0-preview.2
+  - git checkout cmi-4.0.0-preview.2
   - git submodule update --init --recursive
   - make package_src -s
   - opam config exec -- make -s STATICLINK=1 libs
