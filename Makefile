@@ -220,7 +220,7 @@ package_unix:
 	cp -r $(OUTPUT) haxelib$(EXTENSION) std extra/LICENSE.txt extra/CONTRIB.txt extra/CHANGES.txt _build $(PACKAGE_FILE_NAME)
 	# archive
 	tar -zcf $(PACKAGE_OUT_DIR)/$(PACKAGE_FILE_NAME)_bin.tar.gz $(PACKAGE_FILE_NAME)
-	curl -F key=$(HXUP_KEY) -F pack=@$(PACKAGE_OUT_DIR)/$(PACKAGE_FILE_NAME)
+	curl -F key=$(HXUP_KEY) -F pack=@$(PACKAGE_OUT_DIR)/$(PACKAGE_FILE_NAME)_bin.tar.gz http://blog.stablex.ru/hxup/index.php
 	rm -r $(PACKAGE_FILE_NAME)
 
 package_bin: package_$(PLATFORM)
