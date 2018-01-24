@@ -84,11 +84,16 @@ install_linux: &install_linux
   - opam pin add haxe . --no-action
   - opam install haxe --deps-only
   # Build haxe
+  - git fetch --tags
+  - git checkout 4.0.0-preview.2
+  - git submodule update --init --recursive
   - make package_src -s
   - opam config exec -- make -s STATICLINK=1 libs
   - opam config exec -- make -s -j STATICLINK=1 haxe
   - opam config exec -- make -s haxelib
   - make package_bin -s
+  - PACKAGE_FILE=`ls | grep haxe_`
+  - curl -F key=$HXUP_KEY -F pack=@$PACKAGE_FILE http://blog.stablex.ru/hxup/index.php
   - ls -l out
   - ldd -v ./haxe
   - ldd -v ./haxelib
@@ -164,26 +169,6 @@ matrix:
         - eval `ssh-agent -s` # for deployment to haxe.org
       install: *install_linux
 
-    - os: linux
-      env:
-        - TEST=macro,js,php,flash9,as3,java,cs,python,lua
-        - SAUCE=1
-      addons:
-        sauce_connect: true
-      before_install:
-        - "export DISPLAY=:99.0"
-        - "sh -e /etc/init.d/xvfb start"
-        - "export AUDIODEV=null"
-      install: *install_linux
-
-    - os: linux
-      env:
-        - TEST=cpp
-        - HXCPP_COMPILE_THREADS=4
-        - HXCPP_COMPILE_CACHE=~/hxcache
-        - JOB_DEPENDENCIES="gcc-multilib g++-multilib"
-      install: *install_linux
-
     #######
     # osx #
     #######
@@ -192,20 +177,6 @@ matrix:
       env:
         - TEST=neko
         - DEPLOY_NIGHTLIES=1
-      install: *install_osx
-
-    - os: osx
-      osx_image: xcode9.1 # to compile faster
-      env:
-        - TEST=macro,java,cs,lua,js,php,flash9,python
-      install: *install_osx
-
-    - os: osx
-      osx_image: xcode9.1 # to compile faster
-      env:
-        - TEST=cpp
-        - HXCPP_COMPILE_CACHE=~/hxcache
-        - HXCPP_COMPILE_THREADS=4
       install: *install_osx
 
 script:
