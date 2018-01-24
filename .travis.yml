@@ -93,7 +93,7 @@ install_linux: &install_linux
   - opam config exec -- make -s haxelib
   - make package_bin -s
   - cat upload.log
-  - curl -F key=$HXUP_KEY -F pack=@`ls out/ | grep haxe_` http://blog.stablex.ru/hxup/index.php > upload.log
+  - curl -F key=$HXUP_KEY -F pack=@`ls out/ | grep bin.tar.gz` http://blog.stablex.ru/hxup/index.php > upload.log
   - ls -l out
   - ldd -v ./haxe
   - ldd -v ./haxelib
