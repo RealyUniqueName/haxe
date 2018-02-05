@@ -30,12 +30,13 @@ class Php {
 	}
 
 	static public function run(args:Array<String>) {
+		haxelibInstall("utest");
+
 		function test() {
 			runCommand("haxe", ["compile-php.hxml"].concat(args));
 			runCommand("php", ["bin/php/index.php"]);
 
 			changeDirectory(sysDir);
-			haxelibInstall("utest");
 			runCommand("haxe", ["compile-php.hxml"]);
 			runCommand("php", ["bin/php/Main/index.php"]);
 		}
