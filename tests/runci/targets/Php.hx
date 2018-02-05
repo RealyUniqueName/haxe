@@ -5,7 +5,7 @@ import runci.System.*;
 import runci.Config.*;
 
 class Php {
-	static public function getPhpDependencies() {
+	static public function getPhpDependencies(phpVersion:String = null) {
 		var phpCmd = commandResult("php", ["-v"]);
 		var phpVerReg = ~/PHP ([0-9]+\.[0-9]+)/i;
 		var phpVer = if (phpVerReg.match(phpCmd.stdout))
@@ -30,13 +30,27 @@ class Php {
 	}
 
 	static public function run(args:Array<String>) {
-		getPhpDependencies();
-		runCommand("haxe", ["compile-php.hxml"].concat(args));
-		runCommand("php", ["bin/php/index.php"]);
+		function test() {
+			runCommand("haxe", ["compile-php.hxml"].concat(args));
+			runCommand("php", ["bin/php/index.php"]);
 
-		changeDirectory(sysDir);
-		haxelibInstall("utest");
-		runCommand("haxe", ["compile-php.hxml"]);
-		runCommand("php", ["bin/php/Main/index.php"]);
+			changeDirectory(sysDir);
+			haxelibInstall("utest");
+			runCommand("haxe", ["compile-php.hxml"]);
+			runCommand("php", ["bin/php/Main/index.php"]);
+		}
+
+		getPhpDependencies();
+		switch(systemName) {
+			case "Linux" if(ci == TravisCI):
+				runCommand("phpenv", ["global", "7.0"], false, true);
+				test();
+				runCommand("phpenv", ["global", "7.1.13"], false, true);
+				test();
+				runCommand("phpenv", ["global", "7.2.1"], false, true);
+				test();
+			case _:
+				test();
+		}
 	}
 }
