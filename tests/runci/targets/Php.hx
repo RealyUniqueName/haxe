@@ -46,8 +46,10 @@ class Php {
 			case "Linux" if(ci == TravisCI):
 				runCommand("phpenv", ["global", "7.0"], false, true);
 				test();
+				runCommand("phpenv", ["install", "7.1.13"], false, true);
 				runCommand("phpenv", ["global", "7.1.13"], false, true);
 				test();
+				runCommand("phpenv", ["install", "7.2.1"], false, true);
 				runCommand("phpenv", ["global", "7.2.1"], false, true);
 				test();
 			case _:
