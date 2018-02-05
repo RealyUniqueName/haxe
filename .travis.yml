@@ -33,6 +33,7 @@ sudo: required
 dist: trusty
 
 install_linux: &install_linux
+  - phpenv help
   # Install dependencies
   - export APT_CACHE_DIR=~/apt-cache && mkdir -pv $APT_CACHE_DIR
   - sudo apt-get install --reinstall ca-certificates # workaround for "Cannot add PPA: 'ppa:haxe/ocaml'. Please check that the PPA name or format is correct."
