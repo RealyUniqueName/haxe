@@ -26,6 +26,9 @@
 	@see https://haxe.org/manual/std-Array.html
 	@see https://haxe.org/manual/lf-array-comprehension.html
 **/
+
+import haxe.iterators.ArrayKeyValueIterator;
+
 extern class Array<T> {
 
 	/**
@@ -270,7 +273,7 @@ extern class Array<T> {
 	/**
 		Returns an iterator of the Array indices and values.
 	**/
-	function keyValueIterator() : KeyValueIterator<Int,T>;
+	function keyValueIterator() : ArrayKeyValueIterator<T>;
 
 	/**
 		Creates a new Array by applying function `f` to all elements of `this`.
