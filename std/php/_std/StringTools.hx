@@ -110,10 +110,15 @@ import php.*;
 		return s.toUpperCase();
 	}
 
-	public static function fastCodeAt( s : String, index : Int ) : Int {
-		var char:NativeString = (index == 0 ? s : Global.mb_substr(s, index, 1));
-		if(char == '') return 0;
-		return Boot.unsafeOrd(char);
+	static var lastStr:String;
+	static var lastChars:NativeArray;
+
+	public static inline function fastCodeAt( s : String, index : Int ) : Int {
+		if(lastStr != s) {
+			lastStr = s;
+			lastChars = Global.preg_split('//u', s, -1, Const.PREG_SPLIT_NO_EMPTY);
+		}
+		return Syntax.coalesce(lastChars[index], 0);
 	}
 
 	public static inline function isEof( c : Int ) : Bool {
