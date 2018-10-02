@@ -22,7 +22,7 @@
 
 import php.*;
 
-@:coreApi class StringTools {
+class StringTools {
 
 	public inline static function urlEncode( s : String ) : String {
 		return Global.rawurlencode(s);
@@ -111,6 +111,18 @@ import php.*;
 	}
 
 	public static function fastCodeAt( s : String, index : Int ) : Int {
+		// var char:NativeString = (index == 0 ? s : Global.mb_substr(s, index, 1));
+		// if(char == '') return 0;
+		// return Boot.unsafeOrd(char);
+		var cursor = Boot.getStringCursor(s);
+		cursor.seek(index);
+		if(cursor.byteOffset <= Global.strlen(s)) {
+			return 0;
+		}
+		return Boot.unsafeOrd(s, cursor.byteOffset);
+	}
+
+	public static function mbFastCodeAt(s:String, index:Int):Int {
 		var char:NativeString = (index == 0 ? s : Global.mb_substr(s, index, 1));
 		if(char == '') return 0;
 		return Boot.unsafeOrd(char);

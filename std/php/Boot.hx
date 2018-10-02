@@ -572,17 +572,39 @@ class Boot {
 	/**
 		Get UTF-8 code of che first character in `s` without any checks
 	**/
-	static public inline function unsafeOrd(s:NativeString):Int {
-		var code = Global.ord(s[0]);
+	static public inline function unsafeOrd(s:NativeString, offset:Int = 0):Int {
+		var code = Global.ord(s[offset]);
 		if(code < 0xC0) {
 			return code;
 		} else if(code < 0xE0) {
-			return ((code - 0xC0) << 6) + Global.ord(s[1]) - 0x80;
+			return ((code - 0xC0) << 6) + Global.ord(s[offset + 1]) - 0x80;
 		} else if(code < 0xF0) {
-			return ((code - 0xE0) << 12) + ((Global.ord(s[1]) - 0x80) << 6) + Global.ord(s[2]) - 0x80;
+			return ((code - 0xE0) << 12) + ((Global.ord(s[offset + 1]) - 0x80) << 6) + Global.ord(s[offset + 2]) - 0x80;
 		} else {
-			return ((code - 0xF0) << 18) + ((Global.ord(s[1]) - 0x80) << 12) + ((Global.ord(s[2]) - 0x80) << 6) + Global.ord(s[3]) - 0x80;
+			return ((code - 0xF0) << 18) + ((Global.ord(s[offset + 1]) - 0x80) << 12) + ((Global.ord(s[offset + 2]) - 0x80) << 6) + Global.ord(s[offset + 3]) - 0x80;
 		}
+	}
+
+	static var strCache:NativeIndexedArray<StringCursor> = Syntax.arrayDecl(new StringCursor(), new StringCursor(), new StringCursor(), new StringCursor(), new StringCursor());
+
+	static public inline function getStringCursor(str:String):StringCursor {
+		var cursor:StringCursor = null;
+		for(i in 0...5) {
+			if(strCache[i].str == str) {
+				cursor = strCache[i];
+				if(i > 2) {
+					Global.array_splice(strCache, i, 1);
+					Global.array_unshift(strCache, cursor);
+				}
+				break;
+			}
+		}
+		if(cursor == null) {
+			cursor = Global.array_pop(strCache);
+			cursor.reset(str);
+			Global.array_unshift(strCache, cursor);
+		}
+		return cursor;
 	}
 }
 
@@ -951,4 +973,46 @@ private class HxException extends Exception {
 	  this.e = e;
 	  super(Boot.stringify(e));
   }
+}
+
+private class StringCursor {
+	public var str:NativeString;
+	public var byteOffset(default,null) = 0;
+	public var charOffset(default,null) = 0;
+
+	public function new() {}
+
+	@:allow(php.Boot)
+	inline function reset(str:NativeString) {
+		this.str = str;
+		byteOffset = 0;
+		charOffset = 0;
+	}
+
+	public inline function seek(seekChar:Int) {
+		if(seekChar < charOffset) {
+			while(charOffset > seekChar && byteOffset > 0) {
+				byteOffset--;
+				if(Global.ord(str[byteOffset]) & 0xC0 == 0x80) {
+					charOffset--;
+				}
+			}
+			// byteOffset = Global.strlen(str) - Global.strlen(Global.mb_substr(str, seekChar));
+			// charOffset = seekChar;
+		} else {
+			while(charOffset < seekChar && byteOffset < Global.strlen(str)) {
+				charOffset++;
+				var code = Global.ord(str[byteOffset]);
+				if(code < 0xC0) {
+					byteOffset++;
+				} else if(code < 0xE0) {
+					byteOffset += 2;
+				} else if(code < 0xF0) {
+					byteOffset += 3;
+				} else {
+					byteOffset += 4;
+				}
+			}
+		}
+	}
 }
