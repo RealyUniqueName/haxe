@@ -19,9 +19,9 @@ class TestThreads implements utest.ITest
 	{
 		Sys.println("Running TestThreads");
 		var ts = new ThreadSort();
-#if java
-		ts.maxVal *= 10;
-#end
+// #if java
+// 		ts.maxVal *= 10;
+// #end
 		for (creatorWait in [.02, .05, 0])
 			for (creatorLoad in [false, true])
 				for (consumerWait in [.02,.05,0])
@@ -232,7 +232,7 @@ private class LockSemaphore implements SemaphoreStrategy
 	{
 		for(_ in 0...c)
 		{
-			Assert.isTrue(l.wait(1.));
+			Assert.isTrue(l.wait(2.));
 		}
 		this.c = 0;
 	}
