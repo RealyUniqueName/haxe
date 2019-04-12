@@ -232,7 +232,7 @@ private class LockSemaphore implements SemaphoreStrategy
 	{
 		for(_ in 0...c)
 		{
-			Assert.isTrue(l.wait(2.));
+			Assert.isTrue(l.wait(1.));
 		}
 		this.c = 0;
 	}
