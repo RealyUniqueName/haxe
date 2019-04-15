@@ -23,7 +23,7 @@ class TestThreads implements utest.ITest
 		ts.maxVal *= 10;
 #end
 		for (creatorWait in [.02, .05, 0])
-			for (creatorLoad in [false, true])
+			for (creatorLoad in [false])
 				for (consumerWait in [.02,.05,0])
 					for (useTls in [false,true])
 						for (q in [new QDeque() #if java, new QLockFree()#end])
