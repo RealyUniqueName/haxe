@@ -739,7 +739,6 @@ let array_access ctx e1 e2 mode p =
 			end
 		| _ -> raise Not_found)
 	with Not_found ->
-		unify ctx e2.etype ctx.t.tint e2.epos;
 		let rec loop et =
 			match follow et with
 			| TInst ({ cl_array_access = Some t; cl_params = pl },tl) ->
@@ -757,10 +756,14 @@ let array_access ctx e1 e2 mode p =
 				let t = ctx.t.tarray pt in
 				(try unify_raise ctx et t p
 				with Error(Unify _,_) -> if not ctx.untyped then begin
+					let error msg p =
+						raise (WithTypeError (Unify [Unify_custom msg], p))
+					in
 					if !has_abstract_array_access then error ("No @:arrayAccess function accepts an argument of " ^ (s_type (print_context()) e2.etype)) e1.epos
 					else error ("Array access is not allowed on " ^ (s_type (print_context()) e1.etype)) e1.epos
 				end);
 				pt
 		in
 		let pt = loop e1.etype in
+		unify ctx e2.etype ctx.t.tint e2.epos;
 		AKExpr (mk (TArray (e1,e2)) pt p)
