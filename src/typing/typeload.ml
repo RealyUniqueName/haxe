@@ -194,7 +194,7 @@ let check_param_constraints ctx types t pl c p =
 				in
 				match follow t with
 				| TInst({cl_kind = KExpr e},_) ->
-					let e = type_expr {ctx with locals = PMap.empty} e (WithType.with_type ti) in
+					let e = type_expr {ctx with locals = PMap.empty; parents_latest_pass = Typecore.parents_latest_pass ctx} e (WithType.with_type ti) in
 					begin try unify_raise ctx e.etype ti p
 					with Error (Unify _,_) -> fail() end
 				| _ ->
@@ -701,7 +701,7 @@ let rec type_type_param ?(enum_constructor=false) ctx path get_params p tp =
 	| Some th ->
 		let r = exc_protect ctx (fun r ->
 			r := lazy_processing (fun() -> t);
-			let ctx = { ctx with type_params = ctx.type_params @ get_params() } in
+			let ctx = { ctx with type_params = ctx.type_params @ get_params(); parents_latest_pass = Typecore.parents_latest_pass ctx } in
 			let constr = match fst th with
 				| CTIntersection tl -> List.map (load_complex_type ctx true) tl
 				| _ -> [load_complex_type ctx true th]
@@ -741,7 +741,7 @@ let load_core_class ctx c =
 			com2.class_path <- ctx.com.std_path;
 			if com2.display.dms_check_core_api then com2.display <- {com2.display with dms_check_core_api = false};
 			Option.may (fun cs -> CompilationServer.maybe_add_context_sign cs com2 "load_core_class") (CompilationServer.get ());
-			let ctx2 = ctx.g.do_create com2 in
+			let ctx2 = ctx.g.do_create com2 ctx.parents_latest_pass in
 			ctx.g.core_api <- Some ctx2;
 			ctx2
 		| Some c ->

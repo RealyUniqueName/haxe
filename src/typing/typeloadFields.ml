@@ -452,6 +452,7 @@ let create_class_context ctx c context_init p =
 		ctx with
 		curclass = c;
 		type_params = c.cl_params;
+		parents_latest_pass = Typecore.parents_latest_pass ctx;
 		pass = PBuildClass;
 		tthis = (match abstract with
 			| Some a ->
@@ -496,6 +497,7 @@ let create_class_context ctx c context_init p =
 let create_field_context (ctx,cctx) c cff =
 	let ctx = {
 		ctx with
+		parents_latest_pass = Typecore.parents_latest_pass ctx;
 		pass = PBuildClass; (* will be set later to PTypeExpr *)
 	} in
 	let display_modifier = Typeload.check_field_access ctx cff in

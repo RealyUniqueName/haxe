@@ -558,7 +558,7 @@ let init_module_type ctx context_init do_init (decl,p) =
 		let e = (match get_type (fst d.d_name) with TEnumDecl e -> e | _ -> assert false) in
 		if ctx.is_display_file && DisplayPosition.display_position#enclosed_in (pos d.d_name) then
 			DisplayEmitter.display_module_type ctx (TEnumDecl e) (pos d.d_name);
-		let ctx = { ctx with type_params = e.e_params } in
+		let ctx = { ctx with type_params = e.e_params; parents_latest_pass = Typecore.parents_latest_pass ctx } in
 		let h = (try Some (Hashtbl.find ctx.g.type_patches e.e_path) with Not_found -> None) in
 		TypeloadCheck.check_global_metadata ctx e.e_meta (fun m -> e.e_meta <- m :: e.e_meta) e.e_module.m_path e.e_path None;
 		(match h with
@@ -616,7 +616,7 @@ let init_module_type ctx context_init do_init (decl,p) =
 			let params = ref [] in
 			params := type_type_params ~enum_constructor:true ctx ([],fst c.ec_name) (fun() -> !params) c.ec_pos c.ec_params;
 			let params = !params in
-			let ctx = { ctx with type_params = params @ ctx.type_params } in
+			let ctx = { ctx with type_params = params @ ctx.type_params; parents_latest_pass = Typecore.parents_latest_pass ctx } in
 			let rt = (match c.ec_type with
 				| None -> et
 				| Some (t,pt) ->
@@ -690,7 +690,7 @@ let init_module_type ctx context_init do_init (decl,p) =
 		if ctx.is_display_file && DisplayPosition.display_position#enclosed_in (pos d.d_name) then
 			DisplayEmitter.display_module_type ctx (TTypeDecl t) (pos d.d_name);
 		TypeloadCheck.check_global_metadata ctx t.t_meta (fun m -> t.t_meta <- m :: t.t_meta) t.t_module.m_path t.t_path None;
-		let ctx = { ctx with type_params = t.t_params } in
+		let ctx = { ctx with type_params = t.t_params; parents_latest_pass = Typecore.parents_latest_pass ctx } in
 		let tt = load_complex_type ctx true d.d_data in
 		let tt = (match fst d.d_data with
 		| CTExtend _ -> tt
@@ -741,7 +741,7 @@ let init_module_type ctx context_init do_init (decl,p) =
 		if ctx.is_display_file && DisplayPosition.display_position#enclosed_in (pos d.d_name) then
 			DisplayEmitter.display_module_type ctx (TAbstractDecl a) (pos d.d_name);
 		TypeloadCheck.check_global_metadata ctx a.a_meta (fun m -> a.a_meta <- m :: a.a_meta) a.a_module.m_path a.a_path None;
-		let ctx = { ctx with type_params = a.a_params } in
+		let ctx = { ctx with type_params = a.a_params; parents_latest_pass = Typecore.parents_latest_pass ctx } in
 		let is_type = ref false in
 		let load_type t from =
 			let t = load_complex_type ctx true t in
@@ -846,6 +846,11 @@ let type_types_into_module ctx m tdecls p =
 		this_stack = [];
 		with_type_stack = [];
 		call_argument_stack = [];
+		parents_latest_pass = (fun() ->
+			let latest = ctx.parents_latest_pass() in
+			if ctx.pass > latest then ctx.pass
+			else latest
+		);
 		pass = PBuildModule;
 		get_build_infos = (fun() -> None);
 		on_error = (fun ctx msg p -> ctx.com.error msg p);

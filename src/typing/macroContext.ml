@@ -494,7 +494,7 @@ let get_macro_context ctx p =
 		com2.defines.Define.values <- PMap.foldi (fun k v acc -> if List.mem k to_remove then acc else PMap.add k v acc) com2.defines.Define.values PMap.empty;
 		Common.define com2 Define.Macro;
 		Common.init_platform com2 !Globals.macro_platform;
-		let mctx = ctx.g.do_create com2 in
+		let mctx = ctx.g.do_create com2 ctx.parents_latest_pass in
 		mctx.is_display_file <- false;
 		create_macro_interp ctx mctx;
 		Option.may (fun cs -> CompilationServer.maybe_add_context_sign cs com2 "get_macro_context") (CompilationServer.get());

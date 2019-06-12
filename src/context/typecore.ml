@@ -79,7 +79,7 @@ type typer_globals = {
 	mutable complete : bool;
 	(* api *)
 	do_inherit : typer -> Type.tclass -> pos -> (bool * placed_type_path) -> bool;
-	do_create : Common.context -> typer;
+	do_create : Common.context -> (unit -> typer_pass) -> typer;
 	do_macro : typer -> macro_mode -> path -> string -> expr list -> pos -> expr option;
 	do_load_module : typer -> path -> pos -> module_def;
 	do_load_type_def : typer -> pos -> type_path -> module_type;
@@ -96,6 +96,7 @@ and typer = {
 	com : context;
 	t : basic_types;
 	g : typer_globals;
+	parents_latest_pass : unit->typer_pass;
 	mutable bypass_accessor : int;
 	mutable meta : metadata;
 	mutable this_stack : texpr list;
@@ -130,6 +131,11 @@ and typer = {
 exception Forbid_package of (string * path * pos) * pos list * string
 
 exception WithTypeError of error_msg * pos
+
+let parents_latest_pass ctx = fun () ->
+	let latest = ctx.parents_latest_pass() in
+	if ctx.pass > latest then ctx.pass
+	else latest
 
 let make_call_ref : (typer -> texpr -> texpr list -> t -> ?force_inline:bool -> pos -> texpr) ref = ref (fun _ _ _ _ ?force_inline:bool _ -> assert false)
 let type_expr_ref : (typer -> expr -> WithType.t -> texpr) ref = ref (fun _ _ _ -> assert false)

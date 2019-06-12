@@ -77,6 +77,14 @@ let build_instance ctx mtype p =
 				if ctx.pass >= PBuildClass then
 					flush_pass ctx PBuildClass "after_build_instance"
 				else begin
+					(match ctx.parents_latest_pass() with
+						| PBuildModule -> print_endline "PBuildModule";
+						| PBuildClass -> print_endline "PBuildClass";
+						| PTypeField -> print_endline "PTypeField";
+						| PCheckConstraint -> print_endline "PCheckConstraint";
+						| PForce -> print_endline "PForce";
+						| PFinal -> print_endline "PFinal";
+					);
 					match tf with
 						| TInst (c, _) -> ignore(c.cl_build())
 						| TMono _

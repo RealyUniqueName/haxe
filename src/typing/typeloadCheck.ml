@@ -372,7 +372,7 @@ module Inheritance = struct
 
 	let set_heritance ctx c herits p =
 		let is_lib = Meta.has Meta.LibType c.cl_meta in
-		let ctx = { ctx with curclass = c; type_params = c.cl_params; } in
+		let ctx = { ctx with curclass = c; type_params = c.cl_params; parents_latest_pass = Typecore.parents_latest_pass ctx } in
 		let old_meta = c.cl_meta in
 		let process_meta csup =
 			List.iter (fun m ->

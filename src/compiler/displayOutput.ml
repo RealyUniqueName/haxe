@@ -499,7 +499,7 @@ module TypePathHandler = struct
 				| s :: sl when s.[0] >= 'A' && s.[0] <= 'Z' -> List.rev sl,s
 				| _ -> p,c
 			in
-			let ctx = Typer.create com in
+			let ctx = Typer.create com (fun() -> PBuildModule) in
 			(* This is a bit wacky: We want to reset the display position so that revisiting the display file
 			   does not raise another TypePath exception. However, we still want to have it treated like the
 			   display file, so we just set the position to 0 (#6558). *)

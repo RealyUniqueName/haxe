@@ -2511,7 +2511,7 @@ and type_expr ctx (e,p) (with_type:WithType.t) =
 (* ---------------------------------------------------------------------- *)
 (* TYPER INITIALIZATION *)
 
-let rec create com =
+let rec create com parents_latest_pass =
 	let ctx = {
 		com = com;
 		t = com.basic;
@@ -2557,6 +2557,7 @@ let rec create com =
 		with_type_stack = [];
 		call_argument_stack = [];
 		pass = PBuildModule;
+		parents_latest_pass = parents_latest_pass;
 		macro_depth = 0;
 		untyped = false;
 		curfun = FunStatic;
