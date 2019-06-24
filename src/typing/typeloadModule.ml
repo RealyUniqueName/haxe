@@ -849,7 +849,7 @@ let type_types_into_module ctx m tdecls p =
 		call_argument_stack = [];
 		pass = PBuildModule;
 		get_build_infos = (fun() -> None);
-		on_error = (fun ctx msg p -> ctx.com.error msg p);
+		on_error = (fun ctx msg p -> ctx.com.error msg p);1
 		macro_depth = ctx.macro_depth;
 		curclass = null_class;
 		curfield = null_field;
@@ -865,6 +865,7 @@ let type_types_into_module ctx m tdecls p =
 		opened = [];
 		in_call_args = false;
 		vthis = None;
+		message_holder = ctx.message_holder;
 	} in
 	if ctx.g.std != null_module then begin
 		add_dependency m ctx.g.std;

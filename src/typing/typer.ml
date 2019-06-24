@@ -2582,6 +2582,7 @@ let rec create com =
 		opened = [];
 		vthis = None;
 		in_call_args = false;
+		message_holder = None;
 		on_error = (fun ctx msg p -> ctx.com.error msg p);
 	} in
 	ctx.g.std <- (try

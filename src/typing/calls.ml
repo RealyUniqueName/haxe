@@ -141,7 +141,13 @@ let rec unify_call_args' ctx el args r callp inline force_inline =
 		with Error(l,p) when (match l with Call_error _ | Module_not_found _ -> false | _ -> true) ->
 			raise (WithTypeError (l,p))
 	in
-	let rec loop el args = match el,args with
+	let rec loop el args =
+		if (match el with (_,p) :: _ -> p | _ -> null_pos).pfile = "src/Main.hx" then begin
+			print_string "";
+			print_string "";
+			print_string "";
+		end;
+		match el,args with
 		| [],[] ->
 			begin match List.rev !invalid_skips with
 				| [] -> ()
@@ -177,15 +183,20 @@ let rec unify_call_args' ctx el args r callp inline force_inline =
 			end
 		| e :: el,(name,opt,t) :: args ->
 			begin try
-				let e = type_against name t e in
+				let e,submit_messages = hold_messages ctx (fun() -> type_against name t e) in
+				submit_messages();
 				(e,opt) :: loop el args
-			with
-				WithTypeError (ul,p)->
+			with HoldMessages (err,submit_messages) ->
+				match err with
+				| WithTypeError (ul,p)->
 					if opt then
 						let e_def = skip name ul t p in
 						(e_def,true) :: loop (e :: el) args
 					else
 						arg_error ul name false p
+				| _ ->
+					submit_messages();
+					raise err
 			end
 	in
 	let el = try loop el args with exc -> ctx.in_call_args <- in_call_args; raise exc; in
