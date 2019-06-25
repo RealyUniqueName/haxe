@@ -142,11 +142,6 @@ let rec unify_call_args' ctx el args r callp inline force_inline =
 			raise (WithTypeError (l,p))
 	in
 	let rec loop el args =
-		if (match el with (_,p) :: _ -> p | _ -> null_pos).pfile = "src/Main.hx" then begin
-			print_string "";
-			print_string "";
-			print_string "";
-		end;
 		match el,args with
 		| [],[] ->
 			begin match List.rev !invalid_skips with

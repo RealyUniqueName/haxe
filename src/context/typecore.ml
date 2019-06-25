@@ -124,7 +124,6 @@ and typer = {
 	mutable opened : anon_status ref list;
 	mutable vthis : tvar option;
 	mutable in_call_args : bool;
-	mutable message_holder : (string -> pos -> unit) option;
 	(* events *)
 	mutable on_error : typer -> string -> pos -> unit;
 }
@@ -146,43 +145,28 @@ let pass_name = function
 	| PForce -> "force"
 	| PFinal -> "final"
 
-let display_error ctx msg p =
-	match ctx.message_holder with
-	| Some hold -> hold msg p
-	| None ->
-		match ctx.com.display.DisplayMode.dms_error_policy with
-		| DisplayMode.EPShow | DisplayMode.EPIgnore -> ctx.on_error ctx msg p
-		| DisplayMode.EPCollect -> add_diagnostics_message ctx.com msg p DisplayTypes.DiagnosticsKind.DKCompilerError DisplayTypes.DiagnosticsSeverity.Error
+let display_error ctx msg p = match ctx.com.display.DisplayMode.dms_error_policy with
+	| DisplayMode.EPShow | DisplayMode.EPIgnore -> ctx.on_error ctx msg p
+	| DisplayMode.EPCollect -> add_diagnostics_message ctx.com msg p DisplayTypes.DiagnosticsKind.DKCompilerError DisplayTypes.DiagnosticsSeverity.Error
 
 exception HoldMessages of exn * (unit -> unit)
 
-type message_on_hold =
-	| MOHDisplayError of string * pos
-	| MOHComWarning of string * pos
-	| MOHComError of string * pos
-
 let hold_messages ctx action =
-	let old_holder = ctx.message_holder
-	and old_warning = ctx.com.warning
+	let old_warning = ctx.com.warning
 	and old_error = ctx.com.error
 	and messages = ref [] in
-	ctx.message_holder <- Some (fun msg p ->
-		messages := MOHDisplayError (msg, p) :: !messages);
-	ctx.com.warning <- (fun msg p ->
-		messages := MOHComWarning (msg, p) :: !messages);
-	ctx.com.error <- (fun msg p ->
-		messages := MOHComError (msg, p) :: !messages);
+	ctx.com.warning <- (fun msg p -> messages := CMWarning (msg, p) :: !messages);
+	ctx.com.error <- (fun msg p -> messages := CMError (msg, p) :: !messages);
 	let restore() =
-		ctx.message_holder <- old_holder;
 		ctx.com.warning <- old_warning;
 		ctx.com.error <- old_error;
 	in
 	let submit_messages() =
 		List.iter
 			(fun msg -> match msg with
-				| MOHDisplayError (msg,p) -> display_error ctx msg p
-				| MOHComWarning (msg,p) -> ctx.com.warning msg p
-				| MOHComError (msg,p) -> ctx.com.error msg p
+				| CMError (msg,p) -> ctx.com.error msg p
+				| CMWarning (msg,p) -> ctx.com.warning msg p
+				| CMInfo (msg,p) -> assert false
 			)
 			(List.rev !messages)
 	in

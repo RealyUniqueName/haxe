@@ -865,7 +865,6 @@ let type_types_into_module ctx m tdecls p =
 		opened = [];
 		in_call_args = false;
 		vthis = None;
-		message_holder = ctx.message_holder;
 	} in
 	if ctx.g.std != null_module then begin
 		add_dependency m ctx.g.std;
