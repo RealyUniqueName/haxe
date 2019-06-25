@@ -156,7 +156,10 @@ let hold_messages ctx action =
 	and old_error = ctx.com.error
 	and messages = ref [] in
 	ctx.com.warning <- (fun msg p -> messages := CMWarning (msg, p) :: !messages);
-	ctx.com.error <- (fun msg p -> messages := CMError (msg, p) :: !messages);
+	ctx.com.error <- (fun msg p ->
+		messages := CMError (msg, p) :: !messages;
+		raise (Error(Custom msg,p))
+	);
 	let restore() =
 		ctx.com.warning <- old_warning;
 		ctx.com.error <- old_error;
