@@ -192,8 +192,10 @@ let rec unify_call_args' ctx el args r callp inline force_inline =
 					if opt then
 						let e_def = skip name ul t p in
 						(e_def,true) :: loop (e :: el) args
-					else
+					else begin
+						submit_messages();
 						arg_error ul name false p
+					end
 				| _ ->
 					submit_messages();
 					raise err
