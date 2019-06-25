@@ -166,9 +166,12 @@ let hold_messages ctx action =
 	and old_warning = ctx.com.warning
 	and old_error = ctx.com.error
 	and messages = ref [] in
-	ctx.message_holder <- Some (fun msg p -> messages := MOHDisplayError (msg, p) :: !messages);
-	ctx.com.warning <- (fun msg p -> messages := MOHComWarning (msg, p) :: !messages);
-	ctx.com.error <- (fun msg p -> messages := MOHComError (msg, p) :: !messages);
+	ctx.message_holder <- Some (fun msg p ->
+		messages := MOHDisplayError (msg, p) :: !messages);
+	ctx.com.warning <- (fun msg p ->
+		messages := MOHComWarning (msg, p) :: !messages);
+	ctx.com.error <- (fun msg p ->
+		messages := MOHComError (msg, p) :: !messages);
 	let restore() =
 		ctx.message_holder <- old_holder;
 		ctx.com.warning <- old_warning;
