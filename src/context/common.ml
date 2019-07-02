@@ -675,6 +675,10 @@ let find_file ctx f =
 								let full_path = if dir = "." then file_name else Filename.concat dir file_name in
 								if is_cached then
 									Hashtbl.remove ctx.file_lookup_cache current_f;
+								if current_f = "Std.hx" then begin
+									print_endline "-------------------";
+									List.iter print_endline ctx.class_path;
+								end;
 								Hashtbl.add ctx.file_lookup_cache current_f (Some full_path);
 								if current_f = f then
 									found := full_path;
@@ -685,8 +689,6 @@ let find_file ctx f =
 					else loop (had_empty || p = "") l
 				end
 		in
-		print_endline "-------------------";
-		List.iter print_endline ctx.class_path;
 		let r = (try Some (loop false ctx.class_path) with Not_found -> None) in
 		Hashtbl.add ctx.file_lookup_cache f r;
 		(match r with
