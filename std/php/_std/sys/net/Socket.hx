@@ -176,6 +176,7 @@ class Socket {
 			rawWrite:NativeIndexedArray<Resource> = getRaw(write),
 			rawOthers:NativeIndexedArray<Resource> = getRaw(others);
 		var sec = Std.int(timeout), usec = Std.int((timeout % 1) * 1000000);
+		trace(sec);
 		var result = socket_select(rawRead, rawWrite, rawOthers, sec, usec);
 		checkError(result, 0, "Error during select call");
 		// convert raw resources back to Socket objects
