@@ -49,6 +49,7 @@ w.close();
 // read
 c.waitForRead();
 var select = sys.net.Socket.select([c], [c], [c]);
+trace(select.read.length);
 select.read.length == 1;
 select.write.length == 1;
 select.others.length == 0;
