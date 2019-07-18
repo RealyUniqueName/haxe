@@ -642,7 +642,7 @@ let find_file ctx f =
 				String.sub file dot_pos (String.length file - dot_pos)
 			with Not_found -> file
 		in
-		let f_dir = Filename.dirname f
+		let f_dir = normalize_dir_separator (Filename.dirname f)
 		and platform_ext = "." ^ (platform_name_macro ctx)
 		and is_core_api = defined ctx Define.CoreApi in
 		let rec loop had_empty = function
@@ -650,7 +650,7 @@ let find_file ctx f =
 			| [] -> loop true [""]
 			| p :: l ->
 				let file = p ^ f in
-				let dir = Filename.dirname file in
+				let dir = normalize_dir_separator (Filename.dirname file) in
 				if Hashtbl.mem ctx.readdir_cache dir then
 					loop (had_empty || p = "") l
 				else begin
