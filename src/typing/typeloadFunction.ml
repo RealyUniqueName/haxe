@@ -141,25 +141,46 @@ let type_function ctx args ret fmode f do_display p =
 		| TMeta((Meta.MergeBlock,_,_), ({eexpr = TBlock el} as e1)) -> e1
 		| _ -> e
 	in
-	let has_return e =
+	let return_type e =
+		let result = ref None in
 		let rec loop e =
 			match e.eexpr with
-			| TReturn (Some _) -> raise Exit
+			| TReturn e_opt ->
+				result := Some (match e_opt with
+					| None -> ctx.t.tvoid
+					| Some e -> loop e; e.etype
+				);
+				raise Exit
 			| TFunction _ -> ()
 			| _ -> Type.iter loop e
 		in
-		try loop e; false with Exit -> true
+		(try loop e with Exit -> ());
+		Option.default ctx.t.tvoid !result
+	in
+	let finalize_return() =
+		if ctx.com.display.dms_error_policy <> EPIgnore then
+			try TypeloadCheck.return_flow ctx e
+			with Exit -> ()
 	in
 	begin match follow ret with
 		| TAbstract({a_path=[],"Void"},_) -> ()
-		(* We have to check for the presence of return expressions here because
-		   in the case of Dynamic ctx.ret is still a monomorph. If we indeed
-		   don't have a return expression we can link the monomorph to Void. We
-		   can _not_ use type_iseq to avoid the Void check above because that
-		   would turn Dynamic returns to Void returns. *)
-		| TMono t when not (has_return e) -> ignore(link t ret ctx.t.tvoid)
-		| _ when ctx.com.display.dms_error_policy = EPIgnore -> ()
-		| _ -> (try TypeloadCheck.return_flow ctx e with Exit -> ())
+		| TMono t ->
+			let expr_return_type = follow (return_type e) in
+			(* We have to check for the presence of return expressions here because
+			in the case of Dynamic ctx.ret is still a monomorph. If we are about to return a dynamic value,
+			make return type Dynamic (see https://github.com/HaxeFoundation/haxe/issues/6503). But if we indeed
+			don't have a return expression we can link the monomorph to Void. We
+			can _not_ use type_iseq to avoid the Void check above because that
+			would turn Dynamic returns to Void returns. *)
+			if t_dynamic == expr_return_type then begin
+				t := Some t_dynamic;
+				finalize_return()
+			end else if ExtType.is_void expr_return_type then
+				ignore(link t ret ctx.t.tvoid)
+			else
+				finalize_return()
+		| _ ->
+			finalize_return()
 	end;
 	let rec loop e =
 		match e.eexpr with
