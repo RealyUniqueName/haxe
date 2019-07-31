@@ -50,18 +50,9 @@ jobs:
           & "$(CYG_ROOT)/bin/bash.exe" @('-lc', 'opam list')
           & "$(CYG_ROOT)/bin/bash.exe" @('-lc', 'ocamlopt -v')
         displayName: Install OCaml and OCaml libraries
-      - powershell: |
-          Write-Host "${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin"
-          Get-ChildItem -Path "${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin/"
-          MINGW_DLL_PATH = "${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin"
-          Write-Host "##vso[task.prependpath]$(MINGW_DLL_PATH)"
-          Write-Host "##vso[task.setvariable variable=MINGW_DLL_PATH;isOutput=true]this is the value"
-          Write-Host "${env:PATH}"
+      - powershell: Write-Host "##vso[task.prependpath]${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin"
         displayName: Expose mingw dll files
       - powershell: |
-          Write-Host "${env:PATH}"
-          Get-ChildItem -Path "${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin/"
-          dir "${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin"
           Set-PSDebug -Trace 1
           & "$(CYG_ROOT)/bin/bash.exe" @('-lc', 'cd "$OLDPWD" && opam config exec -- make -s -f Makefile.win libs prebuild 2>&1')
           & "$(CYG_ROOT)/bin/bash.exe" @('-lc', 'cd "$OLDPWD" && opam config exec -- make -s -f Makefile.win -j`nproc` haxe 2>&1')
