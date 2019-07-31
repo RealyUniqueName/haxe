@@ -86,6 +86,7 @@ stages:
               python3 -V
             displayName: "Make Python 3 be available as python3 in the cmdline"
           - script: |
+              echo "$(PATH)"
               mkdir "$(HAXELIB_ROOT)"
               haxelib setup "$(HAXELIB_ROOT)"
             displayName: Setup haxelib

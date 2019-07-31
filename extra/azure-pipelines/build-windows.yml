@@ -55,6 +55,7 @@ jobs:
           Get-ChildItem -Path "${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin/"
           dir "${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin"
           Write-Host "##vso[task.prependpath]${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin"
+          Write-Host "${env:PATH}"
         displayName: Expose mingw dll files
       - powershell: |
           Set-PSDebug -Trace 1
