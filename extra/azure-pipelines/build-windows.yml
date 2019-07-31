@@ -50,7 +50,11 @@ jobs:
           & "$(CYG_ROOT)/bin/bash.exe" @('-lc', 'opam list')
           & "$(CYG_ROOT)/bin/bash.exe" @('-lc', 'ocamlopt -v')
         displayName: Install OCaml and OCaml libraries
-      - powershell: Write-Host "##vso[task.prependpath]${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin"
+      - powershell: |
+        Write-Host "${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin"
+        Get-ChildItem -Path "${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin/"
+        dir "${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin"
+        Write-Host "##vso[task.prependpath]${env:CYG_ROOT}/usr/$(MINGW_ARCH)-w64-mingw32/sys-root/mingw/bin"
         displayName: Expose mingw dll files
       - powershell: |
           Set-PSDebug -Trace 1
