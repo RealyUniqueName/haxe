@@ -25,6 +25,7 @@ stages:
         variables:
           HAXELIB_ROOT: C:/haxelib
           HAXE_ARCH: 64
+          MINGW_DLL_PATH: $[ dependencies.BuildWin64.outputs['job1.setvarStep.MINGW_DLL_PATH'] ]
         strategy:
           matrix:
             macro:
@@ -86,6 +87,8 @@ stages:
               python3 -V
             displayName: "Make Python 3 be available as python3 in the cmdline"
           - script: |
+              echo "$(MINGW_DLL_PATH)"
+              echo "##vso[task.setvariable variable=PATH]$(MINGW_DLL_PATH);$(PATH)"
               echo "$(PATH)"
               mkdir "$(HAXELIB_ROOT)"
               haxelib setup "$(HAXELIB_ROOT)"
