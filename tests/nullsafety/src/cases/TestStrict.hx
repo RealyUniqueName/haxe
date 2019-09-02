@@ -882,14 +882,6 @@ class TestStrict {
 		x += x;
 	}
 
-	static function issue8443_nullPassedToInline_shouldPass() {
-		inline function method(?map: (Int)->Int) {
-			return map != null ? map(0) : -1;
-		}
-
-		var x:Int = method();
-	}
-
 	static function issue7900_trace() {
 		var x:Null<()->String> = null;
 		trace(x);
