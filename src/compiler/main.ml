@@ -322,7 +322,8 @@ let generate tctx ext interp swf_header =
 		| Cpp ->
 			Gencpp.generate,"cpp"
 		| Cs ->
-			Gencs.generate,"cs"
+			((fun c -> (), "cs"))
+			(* Gencs.generate,"cs" *)
 		| Java ->
 			if Common.defined com Jvm then
 				Genjvm.generate,"java"
