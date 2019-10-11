@@ -73,6 +73,9 @@ haxe:
 	_build/default/src-prebuild/prebuild.exe version $(ADD_REVISION) $(BRANCH) $(COMMIT_SHA) > src/compiler/version.ml
 	$(DUNE_COMMAND) build --workspace dune-workspace.dev src/haxe.exe
 	cp -f _build/default/src/haxe.exe ./${HAXE_OUTPUT}
+	ocaml -version > build.env
+	opam list >> build.env
+	cat build.env
 
 plugin: haxe
 	$(DUNE_COMMAND) build --workspace dune-workspace.dev plugins/$(PLUGIN)/$(PLUGIN).cmxs
@@ -143,6 +146,9 @@ package_unix:
 	# Copy the package contents to $(PACKAGE_FILE_NAME)
 	mkdir -p $(PACKAGE_FILE_NAME)
 	cp -r $(HAXE_OUTPUT) $(HAXELIB_OUTPUT) std extra/LICENSE.txt extra/CONTRIB.txt extra/CHANGES.txt $(PACKAGE_FILE_NAME)
+	# build environment info
+	ocaml -version > $(PACKAGE_OUT_DIR)/build.env
+	opam list >> $(PACKAGE_OUT_DIR)/build.env
 	# archive
 	tar -zcf $(PACKAGE_OUT_DIR)/$(PACKAGE_FILE_NAME)_bin.tar.gz $(PACKAGE_FILE_NAME)
 	rm -r $(PACKAGE_FILE_NAME)
