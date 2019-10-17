@@ -651,10 +651,12 @@ import cs.system.Object;
 
 	#if !erase_generics
 	@:functionCode('
+		System.Console.WriteLine(typeof(To));
 		if (obj is To)
 			return (To) obj;
-		else if (obj == null)
+		else if (obj == null) {
 			return default(To);
+		}
 		if (typeof(To) == typeof(double))
 			return (To)(object) toDouble(obj);
 		else if (typeof(To) == typeof(int))

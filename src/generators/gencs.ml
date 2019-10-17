@@ -1360,6 +1360,12 @@ let generate con =
 						loop cf.cf_meta
 					| TConst c ->
 						(match c with
+						| TNull when e.epos.pfile = "src/Main.hx" && e.epos.pmin >= 278 && e.epos.pmax <= 282 ->
+							print_string "";
+							print_string "";
+							print_string ""
+						| _ -> ());
+						(match c with
 							| TInt i32 ->
 								write w (Int32.to_string i32);
 								(* these suffixes won't work because of the cast detector which will set each constant to its expected type *)
@@ -1379,7 +1385,7 @@ let generate con =
 								write w (escape s);
 								write w "\""
 							| TBool b -> write w (if b then "true" else "false")
-							| TNull when is_cs_basic_type e.etype || is_tparam e.etype ->
+							| TNull when not (is_null e.etype) && (is_cs_basic_type e.etype || is_tparam e.etype) ->
 								write w "default(";
 								write w (t_s e.etype);
 								write w ")"
