@@ -1,0 +1,12 @@
+{
+	"name" : "tco",
+	"url" : "http://haxe.org",
+	"license" : "MIT",
+	"description" : "Tail Call Optimization Plugin",
+	"version" : "0.1.0",
+	"releasenote" : "Initial release",
+	"classPath": "hx",
+	"contributors" : ["tco"],
+	"tags": ["plugin"],
+	"dependencies" : {}
+}
