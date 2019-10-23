@@ -14,6 +14,15 @@ class plugin =
 					(* static methods *)
 					| TReturn (Some { eexpr = TCall ({ eexpr = TField (_, FStatic (_, f)) }, args) }) when f == field ->
 						add_loop := true;
+						let rec collect_new_args_values args declarations values n =
+							match args with
+							| [] -> declarations, values
+							| arg :: rest ->
+								let v = alloc_var VGenerated ("`tco" ^ (string_of_int n)) arg.etype arg.epos in
+								let decl = { eexpr = TVar (v, Some arg); etype = basic_types.tvoid; epos = v.v_pos }
+								and value = { arg with eexpr = TLocal v } in
+								collect_new_args_values rest (decl :: declarations) (value :: values) (n + 1)
+						in
 						let rec assign_args vars exprs =
 							match vars, exprs with
 							| [], [] -> []
@@ -23,8 +32,9 @@ class plugin =
 								{ e with eexpr = TBinop (OpAssign, arg, e) } :: assign_args rest_vars rest_exprs
 							| _ -> assert false
 						in
+						let temps_rev, args_rev = collect_new_args_values args [] [] 0 in
 						{
-							eexpr = TBlock (assign_args fn.tf_args args);
+							eexpr = TBlock ((List.rev temps_rev) @ (assign_args fn.tf_args (List.rev args_rev)));
 							etype = basic_types.tvoid;
 							epos = e.epos;
 						}
