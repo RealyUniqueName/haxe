@@ -32,9 +32,10 @@ class plugin =
 								{ e with eexpr = TBinop (OpAssign, arg, e) } :: assign_args rest_vars rest_exprs
 							| _ -> assert false
 						in
-						let temps_rev, args_rev = collect_new_args_values args [] [] 0 in
+						let temps_rev, args_rev = collect_new_args_values args [] [] 0
+						and continue = mk TContinue basic_types.tvoid Globals.null_pos in
 						{
-							eexpr = TBlock ((List.rev temps_rev) @ (assign_args fn.tf_args (List.rev args_rev)));
+							eexpr = TBlock ((List.rev temps_rev) @ (assign_args fn.tf_args (List.rev args_rev)) @ [continue]);
 							etype = basic_types.tvoid;
 							epos = e.epos;
 						}
