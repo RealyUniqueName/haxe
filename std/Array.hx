@@ -265,7 +265,10 @@ extern class Array<T> {
 	/**
 		Returns an iterator of the Array values.
 	**/
-	function iterator():Iterator<T>;
+	@:runtime inline function iterator():haxe.iterators.ArrayIterator<T> {
+		return new haxe.iterators.ArrayIterator(this);
+	}
+	// function iterator():Iterator<T>;
 
 	/**
 		Creates a new Array by applying function `f` to all elements of `this`.

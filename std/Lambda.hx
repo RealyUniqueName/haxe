@@ -42,7 +42,7 @@ class Lambda {
 
 		If `it` is an Array, this function returns a copy of it.
 	**/
-	public static function array<A>(it:Iterable<A>):Array<A> {
+	public static inline function array<A, T:Iterable<A>>(it:T):Array<A> {
 		var a = new Array<A>();
 		for (i in it)
 			a.push(i);
@@ -54,7 +54,7 @@ class Lambda {
 
 		If `it` is a List, this function returns a copy of it.
 	**/
-	public static function list<A>(it:Iterable<A>):List<A> {
+	public static inline function list<A, T:Iterable<A>>(it:T):List<A> {
 		var l = new List<A>();
 		for (i in it)
 			l.add(i);
@@ -66,7 +66,7 @@ class Lambda {
 		The order of elements is preserved.
 		If `f` is null, the result is unspecified.
 	**/
-	public static inline function map<A, B>(it:Iterable<A>, f:(item:A) -> B):Array<B> {
+	public static inline function map<A, B, T:Iterable<A>>(it:T, f:(item:A) -> B):Array<B> {
 		return [for (x in it) f(x)];
 	}
 
@@ -75,7 +75,7 @@ class Lambda {
 		The order of elements is preserved.
 		If `f` is null, the result is unspecified.
 	**/
-	public static inline function mapi<A, B>(it:Iterable<A>, f:(index:Int, item:A) -> B):Array<B> {
+	public static inline function mapi<A, B, T:Iterable<A>>(it:T, f:(index:Int, item:A) -> B):Array<B> {
 		var i = 0;
 		return [for (x in it) f(i++, x)];
 	}
@@ -84,7 +84,7 @@ class Lambda {
 		Concatenate a list of iterables.
 		The order of elements is preserved.
 	**/
-	public static inline function flatten<A>(it:Iterable<Iterable<A>>):Array<A> {
+	public static inline function flatten<A, T1:Iterable<A>, T2:Iterable<T1>>(it:T2):Array<A> {
 		return [for (e in it) for (x in e) x];
 	}
 

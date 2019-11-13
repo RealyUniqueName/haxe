@@ -74,9 +74,12 @@ extern class Array<T> {
 		return [for (v in this) if (f(v)) v];
 	}
 
-	@:runtime inline function iterator():Iterator<T> {
-		return @:privateAccess HxOverrides.iter(this);
+	@:runtime inline function iterator():haxe.iterators.ArrayIterator<T> {
+		return new haxe.iterators.ArrayIterator(this);
 	}
+	// @:runtime inline function iterator():Iterator<T> {
+	// 	return @:privateAccess HxOverrides.iter(this);
+	// }
 
 	inline function resize(len:Int):Void {
 		this.length = len;
