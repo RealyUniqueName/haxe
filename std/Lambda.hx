@@ -84,7 +84,7 @@ class Lambda {
 		Concatenate a list of iterables.
 		The order of elements is preserved.
 	**/
-	public static inline function flatten<A, T1:Iterable<A>, T2:Iterable<T1>>(it:T2):Array<A> {
+	public static inline function flatten<A, T:Iterable<A>, L:Iterable<T>>(it:L):Array<A> {
 		return [for (e in it) for (x in e) x];
 	}
 

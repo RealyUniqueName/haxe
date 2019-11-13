@@ -9,22 +9,37 @@ open Error
 open Texpr.Builder
 
 let optimize_for_loop_iterator ctx v e1 e2 p =
-	let c,tl =
+	let c,tl,e1 =
 		let rec get_class_and_params e =
 			match follow e.etype with
-			| TInst (c,pl) -> c,pl
+			| TInst (c,pl) -> c,pl,e1
 			| _ ->
+				let fetch_return_type t =
+					(match follow t with
+					| TFun (_, t) ->
+						(match follow t with
+						| TInst (c,pl) -> c,pl
+						| _ -> raise Exit)
+					| _ -> raise Exit)
+				in
 				match e.eexpr with
 				| TCast (e,None) ->
 					get_class_and_params e
 				| TCall ({ eexpr = TField (_, FInstance (c,pl,cf)) }, _) ->
 					let t = apply_params c.cl_params pl cf.cf_type in
+					let c,pl = fetch_return_type t in
+					c,pl,e1
+				| TCall ({ eexpr = TField ({ etype = t } as eiterable, FAnon ({ cf_name = field_name })) } as efield, args) ->
 					(match follow t with
-					| TFun (_, t) ->
-						(match follow t with
-						| TInst (c,pl) -> c,pl
-						| _ -> raise Exit
-						)
+					| TInst (iterable_cls,pl) ->
+						let _, t, cf =
+							let apply_params cf = apply_params iterable_cls.cl_params pl cf.cf_type in
+							try raw_class_field apply_params iterable_cls pl field_name
+							with Not_found -> raise Exit
+						in
+						let c,pl = fetch_return_type t in
+						let efield = { efield with eexpr = TField (eiterable, FInstance(c,pl,cf)); etype = t } in
+						c,pl,{ e with eexpr = TCall (efield, args) }
 					| _ -> raise Exit
 					)
 				| _ -> raise Exit
