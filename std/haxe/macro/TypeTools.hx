@@ -378,7 +378,7 @@ class TypeTools {
 		If any argument is null, the result is unspecified.
 	**/
 	static public function findField(c:ClassType, name:String, isStatic:Bool = false):Null<ClassField> {
-		var field = (isStatic ? c.statics : c.fields).get().find(function(field) return field.name == name);
+		var field = (isStatic ? c.statics : c.fields).get().find(function(field:ClassField) return field.name == name);
 		return if (field != null) field; else if (c.superClass != null) findField(c.superClass.t.get(), name, isStatic); else null;
 	}
 }
