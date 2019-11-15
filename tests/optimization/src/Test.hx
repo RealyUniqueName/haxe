@@ -144,6 +144,25 @@ class Test {
 	}
 
 	@:js('
+		var _g_set_amount = 10;
+		var _g_current = 0;
+		while(_g_current++ < 10) {
+			var i = null;
+			var _g_current1 = 0;
+			var _g_set = i;
+			while(_g_current1++ < i.amount) {
+				var j = null;
+			}
+		}
+	')
+	static function testIterableOfIterable_passedToInlineMethodAsAnonConstraint() {
+		iterIterableIterable(new Collection<Collection<Int>>(10));
+	}
+	static inline function iterIterableIterable<V,T1:Iterable<V>,T2:Iterable<T1>>(it:T2) {
+		for(i in it) for(j in i) {}
+	}
+
+	@:js('
 		var x_foo = 1;
 		var x_bar = 2;
 		var y = 1;
