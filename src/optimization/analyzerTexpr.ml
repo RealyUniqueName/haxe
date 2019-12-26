@@ -1289,8 +1289,9 @@ module Purity = struct
 		Hashtbl.fold (fun _ node acc ->
 			match node.pn_purity with
 			| Pure | MaybePure ->
+				let original_meta = node.pn_field.cf_meta in
 				node.pn_field.cf_meta <- (Meta.Pure,[EConst(Ident "true"),node.pn_field.cf_pos],node.pn_field.cf_pos) :: node.pn_field.cf_meta;
-				node.pn_field :: acc
+				(node.pn_field, original_meta) :: acc
 			| _ ->
 				acc
 		) node_lut [];

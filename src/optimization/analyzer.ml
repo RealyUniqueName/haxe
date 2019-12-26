@@ -1100,7 +1100,7 @@ module Run = struct
 		with_timer config.detail_times ["other"] (fun () ->
 			let cfl = if config.optimize && config.purity_inference then with_timer config.detail_times ["optimize";"purity-inference"] (fun () -> Purity.infer com) else [] in
 			List.iter (run_on_type ctx config) types;
-			List.iter (fun cf -> cf.cf_meta <- List.filter (fun (m,_,_) -> m <> Meta.Pure) cf.cf_meta) cfl
+			List.iter (fun (cf,original_meta) -> cf.cf_meta <- original_meta) cfl
 		)
 end
 ;;
