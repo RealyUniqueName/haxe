@@ -436,7 +436,7 @@ and flush_macro_context mint ctx =
 			()
 	in
 	let type_filters = [
-		Filters.add_field_inits (StringMap.empty) mctx;
+		Filters.add_field_inits (RenameVars.Filter.create mctx.com) mctx;
 		minimal_restore;
 		Filters.apply_native_paths mctx
 	] in

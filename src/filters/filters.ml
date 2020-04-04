@@ -194,7 +194,7 @@ let check_local_vars_init com e =
 
 (* -------------------------------------------------------------------------- *)
 (* RENAME LOCAL VARS *)
-
+(*
 let collect_reserved_local_names com =
 	match com.platform with
 	| Js ->
@@ -326,7 +326,7 @@ let rename_local_vars ctx reserved e =
 		| s :: _,_ | [],s -> reserve s
 	end;
 	rename_local_vars_aux ctx !reserved e;
-	e
+	e *)
 
 let mark_switch_break_loops e =
 	let add_loop_label n e =
@@ -580,7 +580,7 @@ let add_rtti ctx t =
 		()
 
 (* Adds member field initializations as assignments to the constructor *)
-let add_field_inits reserved ctx t =
+let add_field_inits var_renamer ctx t =
 	let apply c =
 		let ethis = mk (TConst TThis) (TInst (c,List.map snd c.cl_params)) c.cl_pos in
 		(* TODO: we have to find a variable name which is not used in any of the functions *)
@@ -629,7 +629,7 @@ let add_field_inits reserved ctx t =
 			(match cf.cf_expr with
 			| Some e ->
 				(* This seems a bit expensive, but hopefully constructor expressions aren't that massive. *)
-				let e = rename_local_vars ctx reserved e in
+				let e = RenameVars.Filter.run var_renamer ctx e in
 				let e = Optimizer.sanitize ctx.com e in
 				cf.cf_expr <- Some e
 			| _ ->
@@ -896,13 +896,13 @@ let run com tctx main =
 	com.stage <- CAnalyzerStart;
 	if com.platform <> Cross then Analyzer.Run.run_on_types tctx new_types;
 	com.stage <- CAnalyzerDone;
-	let reserved = collect_reserved_local_names com in
+	let var_renamer = RenameVars.Filter.create com in
 	let filters = [
 		Optimizer.sanitize com;
 		if com.config.pf_add_final_return then add_final_return else (fun e -> e);
 		(match com.platform with
 		| Eval -> (fun e -> e)
-		| _ -> rename_local_vars tctx reserved);
+		| _ -> RenameVars.Filter.run var_renamer tctx);
 		mark_switch_break_loops;
 	] in
 	let t = filter_timer detail_times ["expr 2"] in
@@ -950,7 +950,7 @@ let run com tctx main =
 		check_private_path;
 		apply_native_paths;
 		add_rtti;
-		(match com.platform with | Java | Cs -> (fun _ _ -> ()) | _ -> add_field_inits reserved);
+		(match com.platform with | Java | Cs -> (fun _ _ -> ()) | _ -> add_field_inits var_renamer);
 		(match com.platform with Hl -> (fun _ _ -> ()) | _ -> add_meta_field);
 		check_void_field;
 		(match com.platform with | Cpp -> promote_first_interface_to_super | _ -> (fun _ _ -> ()) );

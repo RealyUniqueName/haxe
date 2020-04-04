@@ -102,6 +102,47 @@ type nested_function_scoping =
 	(** TFunction nodes are nested in the output and there is var hoisting **)
 	| Hoisted
 
+(**
+	Target capabilities for shadowing local variables within a scope
+*)
+type scope_var_shadowing =
+	(** Shadowing is not supported *)
+	| NoShadowing
+	(**
+		A variable can be shadowed as long as the usage of the shadowed var does not
+		overlap with the shadowing var declaration.
+		Example of overlapping:
+		```
+		var a = 123;
+		var a = a * 2; // here
+		```
+	*)
+	| NoOverlapShadowing
+	(** Fully-fledged shadowing (the same as in Haxe) *)
+	| FullShadowing
+
+type local_var_scoping =
+	(** All local variables live in a function scope *)
+	| FunctionScope
+	(** Each block has a separate scope for local vars *)
+	| BlockScope
+
+type scoping_flags =
+	(** Local variables should not have these names *)
+	| ReserveNames of string list
+	(** Local variables should not shadow current top-level package *)
+	| ReserveTopPackage
+	(** Local variables should not shadow any existing class names *)
+	| ReserveAllClassNames
+
+type scoping = {
+	sc_flags : scoping_flags list;
+	sc_vars : local_var_scoping;
+	sc_shadowing : scope_var_shadowing;
+	sc_functions : nested_function_scoping;
+}
+
+
 type platform_config = {
 	(** has a static type system, with not-nullable basic types (Int/Float/Bool) *)
 	pf_static : bool;
@@ -131,6 +172,8 @@ type platform_config = {
 	pf_supports_unicode : bool;
 	(** exceptions handling config **)
 	pf_exceptions : exceptions_config;
+	(** local variables scoping rules *)
+	pf_scoping : scoping;
 	(** the scoping behavior of nested functions **)
 	pf_nested_function_scoping : nested_function_scoping;
 }
@@ -353,6 +396,12 @@ let default_config =
 			ec_wildcard_catch = ([],"Dynamic");
 			ec_base_throw = ([],"Dynamic");
 		};
+		pf_scoping = {
+			sc_flags = [];
+			sc_vars = BlockScope;
+			sc_shadowing = FullShadowing;
+			sc_functions = Independent;
+		};
 		pf_nested_function_scoping = Independent;
 	}
 
@@ -377,6 +426,11 @@ let get_config com =
 				ec_native_catches = [];
 				ec_wildcard_catch = ([],"Dynamic");
 				ec_base_throw = ([],"Dynamic");
+			};
+			pf_scoping = { default_config.pf_scoping with
+				sc_flags = [ReserveTopPackage; ReserveAllClassNames];
+				sc_vars = FunctionScope; (* TODO: change to BlockScope for ES6 after merging https://github.com/HaxeFoundation/haxe/pull/9280 *)
+				sc_shadowing = NoOverlapShadowing;
 			};
 			pf_nested_function_scoping = Hoisted;
 		}
@@ -433,6 +487,10 @@ let get_config com =
 				ec_wildcard_catch = (["php"],"Throwable");
 				ec_base_throw = (["php"],"Throwable");
 			};
+			pf_scoping = { default_config.pf_scoping with
+				sc_vars = FunctionScope;
+				sc_shadowing = NoOverlapShadowing;
+			};
 			pf_nested_function_scoping = Nested;
 		}
 	| Cpp ->
@@ -483,7 +541,10 @@ let get_config com =
 				];
 				ec_wildcard_catch = (["java";"lang"],"Throwable");
 				ec_base_throw = (["java";"lang"],"RuntimeException");
-			}
+			};
+			pf_scoping = { default_config.pf_scoping with
+				sc_flags = [ReserveNames(["_"])];
+			};
 		}
 	| Python ->
 		{
