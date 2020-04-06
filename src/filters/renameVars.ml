@@ -122,15 +122,16 @@ end = struct
 			rename r v []
 
 	let rec reference_var r scope in_loop v =
-		let rec loop declares =
+		let rec loop declares passed_v_declaration =
 			match declares with
 			| [] ->
 				(match scope.parent with
 				| Some parent -> reference_var r parent in_loop v
 				| None -> ())
-			| (d,d_loop) :: _ when d == v ->
+			| (d,d_loop) :: rest when d == v ->
 				if r.cfg.sc_shadowing = FullShadowing || not in_loop then ()
-				else if
+				else loop rest true
+			| (_,false) :: _ when in_loop && passed_v_declaration -> ()
 			| (d,_) :: rest ->
 				let overlaps =
 					let overlaps =
@@ -145,9 +146,9 @@ end = struct
 					end
 				in
 				if d.v_name = v.v_name then rename r d overlaps;
-				loop rest
+				loop rest passed_v_declaration
 		in
-		loop scope.declares
+		loop scope.declares false
 
 	let rec diff_declared new_declared old_declared =
 		match new_declared, old_declared with
