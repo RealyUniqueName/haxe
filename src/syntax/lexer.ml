@@ -191,9 +191,13 @@ let find_line p f =
 let resolve_pos file =
 	let ch = open_in_bin file in
 	let f = make_file file in
-	let rec loop p =
+	let input_char ch =
+		let c = input_char ch in
 		if file = "my_template.mtt" then
-			print_endline (string_of_int p);
+			print_endline (string_of_int (int_of_char c));
+		c
+	in
+	let rec loop p =
 		let inc i () =
 			f.lline <- f.lline + 1;
 			f.llines <- (p + i,f.lline) :: f.llines;
