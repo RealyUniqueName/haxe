@@ -189,12 +189,14 @@ let find_line p f =
 
 (* resolve a position within a non-haxe file by counting newlines *)
 let resolve_pos file =
+	let b = Bytes.create 1 in
 	let ch = open_in_bin file in
 	let f = make_file file in
 	let input_byte ch =
-		let c = input_byte ch in
+		really_input ch b 0 1;
+		let c = Bytes.get b 0 in
 		if file = "my_template.mtt" then
-			print_endline (string_of_int c);
+			print_endline (string_of_int (int_of_char c));
 		c
 	in
 	let rec loop p =
@@ -204,8 +206,8 @@ let resolve_pos file =
 			i
 		in
 		let i = match input_byte ch with
-			| 10 -> inc 1
-			| 13 ->
+			| '\n' -> inc 1
+			| '\r' ->
 				ignore(input_byte ch);
 				inc 2
 			| c -> (fun () ->
@@ -215,9 +217,10 @@ let resolve_pos file =
 						skip (n - 1)
 					end
 				in
-				if c < 0xC0 then ()
-				else if c < 0xE0 then skip 1
-				else if c < 0xF0 then skip 2
+				let code = int_of_char c in
+				if code < 0xC0 then ()
+				else if code < 0xE0 then skip 1
+				else if code < 0xF0 then skip 2
 				else skip 3;
 				1
 			)
