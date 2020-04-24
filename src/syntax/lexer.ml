@@ -191,10 +191,10 @@ let find_line p f =
 let resolve_pos file =
 	let ch = open_in_bin file in
 	let f = make_file file in
-	let input_char ch =
-		let c = input_char ch in
+	let input_byte ch =
+		let c = input_byte ch in
 		if file = "my_template.mtt" then
-			print_endline (string_of_int (int_of_char c));
+			print_endline (string_of_int c);
 		c
 	in
 	let rec loop p =
@@ -203,22 +203,21 @@ let resolve_pos file =
 			f.llines <- (p + i,f.lline) :: f.llines;
 			i
 		in
-		let i = match input_char ch with
-			| '\n' -> inc 1
-			| '\r' ->
-				ignore(input_char ch);
+		let i = match input_byte ch with
+			| 10 -> inc 1
+			| 13 ->
+				ignore(input_byte ch);
 				inc 2
 			| c -> (fun () ->
 				let rec skip n =
 					if n > 0 then begin
-						ignore(input_char ch);
+						ignore(input_byte ch);
 						skip (n - 1)
 					end
 				in
-				let code = int_of_char c in
-				if code < 0xC0 then ()
-				else if code < 0xE0 then skip 1
-				else if code < 0xF0 then skip 2
+				if c < 0xC0 then ()
+				else if c < 0xE0 then skip 1
+				else if c < 0xF0 then skip 2
 				else skip 3;
 				1
 			)
