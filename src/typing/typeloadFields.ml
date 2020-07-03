@@ -914,6 +914,7 @@ let check_abstract (ctx,cctx,fctx) c cf fd t ret p =
 						if not fctx.is_macro then (try type_eq EqStrict ret ta with Unify_error l -> error (error_msg (Unify l)) p);
 						match t with
 							| TFun([_,_,t],_) -> t
+							| TFun([(_,_,t);(_,true,t2)],_) when is_pos_infos t2 -> t
 							| _ -> error (cf.cf_name ^ ": @:from cast functions must accept exactly one argument") p
 					) "@:from" in
 					a.a_from_field <- (TLazy r,cf) :: a.a_from_field;
@@ -922,9 +923,11 @@ let check_abstract (ctx,cctx,fctx) c cf fd t ret p =
 					(match cf.cf_kind, cf.cf_type with
 					| Var _, _ ->
 						error "@:to meta should be used on methods" p
+					| Method _, TFun([_;(_,true,t)], _) when not fctx.is_abstract_member && is_pos_infos t -> ()
 					| Method _, TFun(args, _) when not fctx.is_abstract_member && List.length args <> 1 ->
 						if not (Meta.has Meta.MultiType a.a_meta) then (* TODO: get rid of this check once multitype is removed *)
 						error ("static @:to method should have one argument") p
+					| Method _, TFun([_;(_,true,t)], _) when fctx.is_abstract_member && is_pos_infos t -> ()
 					| Method _, TFun(args, _) when fctx.is_abstract_member && List.length args <> 1 ->
 						if not (Meta.has Meta.MultiType a.a_meta) then (* TODO: get rid of this check once multitype is removed *)
 						error "@:to method should have no arguments" p
@@ -971,7 +974,7 @@ let check_abstract (ctx,cctx,fctx) c cf fd t ret p =
 					if fctx.is_macro then error (cf.cf_name ^ ": Macro operator functions are not supported") p;
 					let targ = if fctx.is_abstract_member then tthis else ta in
 					let left_eq,right_eq = match follow t with
-						| TFun([(_,_,t1);(_,_,t2)],_) ->
+						| TFun((_,_,t1) :: (_,_,t2) :: rest,_) when (match rest with [] -> true | [_,true,t] -> is_pos_infos t | _ -> false) ->
 							type_iseq targ t1,type_iseq targ t2
 						| _ ->
 							if fctx.is_abstract_member then

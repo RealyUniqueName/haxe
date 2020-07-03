@@ -22,8 +22,20 @@ let rec make_static_call ctx c cf a pl args t p =
 				f();
 				e
 			| _ -> die "" __LOC__
-	end else
+	end else begin
+		let args =
+			match follow cf.cf_type with
+			| TFun (expected_args,_) ->
+				(match List.rev expected_args with
+				| (_,true,t) :: rest when List.length rest = List.length args && is_pos_infos t ->
+					let infos = mk_infos ctx p [] in
+					args @ [type_expr ctx infos (WithType.with_type t)]
+				| _ -> args
+				)
+			| _ -> args
+		in
 		Typecore.make_static_call ctx c cf (apply_params a.a_params pl) args t p
+	end
 
 and do_check_cast ctx tleft eright p =
 	let uctx = default_unification_context in
