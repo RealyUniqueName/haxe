@@ -93,6 +93,9 @@ type vprototype_kind =
 	| PInstance
 	| PObject
 
+type vdescriptor =
+	| DThread of Luv.Thread.t
+
 type value =
 	| VNull
 	| VTrue
@@ -110,6 +113,7 @@ type value =
 	| VFieldClosure of value * vfunc
 	| VLazy of (unit -> value) ref
 	| VNativeString of string
+	| VDescriptor of vdescriptor
 
 and vfunc = value list -> value
 
@@ -203,6 +207,7 @@ and venum_value = {
 
 and vthread = {
 	mutable tthread : Thread.t;
+	tid : int;
 	tdeque : vdeque;
 	mutable tevents : value;
 	mutable tstorage : value IntMap.t;
@@ -239,6 +244,7 @@ let rec equals a b = match a,b with
 	| VFunction(vf1,_),VFunction(vf2,_) -> vf1 == vf2
 	| VPrototype proto1,VPrototype proto2 -> proto1.ppath = proto2.ppath
 	| VNativeString s1,VNativeString s2 -> s1 = s2
+	| VDescriptor d1,VDescriptor d2 -> d1 = d2
 	| VLazy f1,_ -> equals (!f1()) b
 	| _,VLazy f2 -> equals a (!f2())
 	| _ -> a == b

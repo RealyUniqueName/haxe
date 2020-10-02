@@ -29,6 +29,7 @@ open EvalField
 open EvalHash
 open EvalString
 open EvalThread
+open EvalThreads
 
 let catch_unix_error f arg =
 	try
@@ -1793,7 +1794,7 @@ module StdMutex = struct
 	let acquire = vifun0 (fun vthis ->
 		let mutex = this vthis in
 		Mutex.lock mutex.mmutex;
-		mutex.mowner <- Some (Thread.id (Thread.self()));
+		mutex.mowner <- Some (EvalThreads.current()).tid;
 		vnull
 	)
 
@@ -1807,7 +1808,7 @@ module StdMutex = struct
 	let tryAcquire = vifun0 (fun vthis ->
 		let mutex = this vthis in
 		if Mutex.try_lock mutex.mmutex then begin
-			mutex.mowner <- Some (Thread.id (Thread.self()));
+			mutex.mowner <- Some (EvalThreads.current()).tid;
 			vtrue
 		end else
 			vfalse
@@ -2783,7 +2784,7 @@ module StdTls = struct
 	let get_value = vifun0 (fun vthis ->
 		let this = this vthis in
 		try
-			let id = Thread.id (Thread.self()) in
+			let id = (EvalThreads.current()).tid in
 			let eval = IntMap.find id (get_ctx()).evals in
 			IntMap.find this eval.thread.tstorage
 		with Not_found ->
@@ -3020,7 +3021,7 @@ module StdType = struct
 				7,[|get_static_prototype_as_value ctx ve.epath null_pos|]
 			| VLazy f ->
 				loop (!f())
-			| VNativeString _ -> 8,[||]
+			| VNativeString _ | VDescriptor _ -> 8,[||]
 		in
 		let i,vl = loop v in
 		encode_enum_value key_ValueType i vl None

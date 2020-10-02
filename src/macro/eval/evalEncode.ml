@@ -290,3 +290,6 @@ let encode_lazy f =
 		v
 	) in
 	VLazy r
+
+let encode_descriptor d =
+	VDescriptor d

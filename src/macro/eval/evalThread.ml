@@ -3,68 +3,7 @@ open EvalContext
 open EvalDebugMisc
 open EvalExceptions
 open EvalValue
-
-module Deque = struct
-	let create () = {
-		dvalues = [];
-		dmutex = Mutex.create();
-	}
-
-	let add this i =
-		Mutex.lock this.dmutex;
-		this.dvalues <- this.dvalues @ [i];
-		Mutex.unlock this.dmutex
-
-	let pop this blocking =
-		if not blocking then begin
-			Mutex.lock this.dmutex;
-			match this.dvalues with
-			| v :: vl ->
-				this.dvalues <- vl;
-				Mutex.unlock this.dmutex;
-				Some v
-			| [] ->
-				Mutex.unlock this.dmutex;
-				None
-		end else begin
-			(* Optimistic first attempt with immediate lock. *)
-			Mutex.lock this.dmutex;
-			begin match this.dvalues with
-			| v :: vl ->
-				this.dvalues <- vl;
-				Mutex.unlock this.dmutex;
-				Some v
-			| [] ->
-				Mutex.unlock this.dmutex;
-				(* First attempt failed, let's be pessimistic now to avoid locks. *)
-				let rec loop () =
-					Thread.yield();
-					match this.dvalues with
-					| v :: vl ->
-						(* Only lock if there's a chance to have a value. This avoids high amounts of unneeded locking. *)
-						Mutex.lock this.dmutex;
-						(* We have to check again because the value could be gone by now. *)
-						begin match this.dvalues with
-						| v :: vl ->
-							this.dvalues <- vl;
-							Mutex.unlock this.dmutex;
-							Some v
-						| [] ->
-							Mutex.unlock this.dmutex;
-							loop()
-						end
-					| [] ->
-						loop()
-				in
-				loop()
-			end
-		end
-
-	let push this i =
-		Mutex.lock this.dmutex;
-		this.dvalues <- i :: this.dvalues;
-		Mutex.unlock this.dmutex
-end
+open EvalThreads
 
 let create_eval thread = {
 	env = None;
@@ -79,7 +18,7 @@ let create_eval thread = {
 
 let spawn ctx f =
 	let f thread =
-		let id = Thread.id (Thread.self()) in
+		let id = thread.tid in
 		let maybe_send_thread_event reason = match ctx.debug.debug_socket with
 			| Some socket ->
 				socket.connection.send_thread_event id reason
@@ -89,6 +28,7 @@ let spawn ctx f =
 		let new_eval = create_eval thread in
 		ctx.evals <- IntMap.add id new_eval ctx.evals;
 		let close () =
+			ThreadsStorage.remove thread.tthread;
 			ctx.evals <- IntMap.remove id ctx.evals;
 			maybe_send_thread_event "exited";
 		in
@@ -108,11 +48,7 @@ let spawn ctx f =
 			close();
 			raise exc
 	in
-	let thread = {
-		tthread = Obj.magic ();
-		tstorage = IntMap.empty;
-		tevents = vnull;
-		tdeque = Deque.create();
-	} in
-	thread.tthread <- Thread.create f thread;
-	thread
+	let preprocess thread =
+		thread.tthread <- Thread.create f thread
+	in
+	ThreadsStorage.alloc ~preprocess (Obj.magic())

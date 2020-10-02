@@ -83,6 +83,7 @@ let var_to_json name value vio env =
 		| VFunction _ | VFieldClosure _ -> "<fun>"
 		| VLazy f -> level2_value_repr (!f())
 		| VNativeString s -> string_repr s
+		| VDescriptor _ -> "<descriptor>"
 	in
 	let fields_string fields =
 		let l = List.map (fun (name, value) -> Printf.sprintf "%s: %s" (rev_hash name) (level2_value_repr value)) fields in
@@ -146,6 +147,8 @@ let var_to_json name value vio env =
 		| VLazy f -> value_string (!f())
 		| VNativeString s ->
 			jv "NativeString" (string_repr s) 0
+		| VDescriptor _ ->
+			jv "Descriptor" "<descriptor>" 0
 	in
 	value_string value
 
@@ -190,7 +193,7 @@ let output_threads ctx =
 	let fold id eval acc =
 		(JObject [
 			"id",JInt id;
-			"name",JString (Printf.sprintf "Thread %i" (Thread.id eval.thread.tthread));
+			"name",JString (Printf.sprintf "Thread %i" (eval.thread.tid));
 		]) :: acc
 	in
 	let threads = IntMap.fold fold ctx.evals [] in
@@ -265,7 +268,7 @@ let output_scope_vars env scope =
 
 let output_inner_vars v env =
 	let rec loop v = match v with
-		| VNull | VTrue | VFalse | VInt32 _ | VFloat _ | VFunction _ | VFieldClosure _ | VNativeString _ -> []
+		| VNull | VTrue | VFalse | VInt32 _ | VFloat _ | VFunction _ | VFieldClosure _ | VNativeString _ | VDescriptor _ -> []
 		| VEnumValue ve ->
 			begin match (get_static_prototype_raise (get_ctx()) ve.epath).pkind with
 				| PEnum names ->
@@ -311,7 +314,7 @@ let output_inner_vars v env =
 		| VInstance {ikind = IMutex mutex} ->
 			["owner",match mutex.mowner with None -> vnull | Some id -> vint id]
 		| VInstance {ikind = IThread thread} ->
-			["id",vint (Thread.id thread.tthread)]
+			["id",vint (thread.tid)]
 		| VInstance vi ->
 			let fields = instance_fields vi in
 			List.map (fun (n,v) ->
@@ -427,7 +430,7 @@ module ValueCompletion = struct
 			| _ -> "field"
 		in
 		let rec loop v = match v with
-			| VNull | VTrue | VFalse | VInt32 _ | VFloat _ | VFunction _ | VFieldClosure _ | VNativeString _ ->
+			| VNull | VTrue | VFalse | VInt32 _ | VFloat _ | VFunction _ | VFieldClosure _ | VNativeString _ | VDescriptor _ ->
 				[]
 			| VObject o ->
 				let fields = object_fields o in
@@ -773,11 +776,11 @@ let make_connection socket =
 	let output_breakpoint_stop debug =
 		(* TODO: this isn't thread-safe. We should only creates these anew if all threads continued *)
 		debug.debug_context <- new eval_debug_context;
-		send_event socket "breakpointStop" (Some (JObject ["threadId",JInt (Thread.id (Thread.self()))]))
+		send_event socket "breakpointStop" (Some (JObject ["threadId",JInt (EvalThreads.current()).tid]))
 	in
 	let output_exception_stop debug v _ =
 		debug.debug_context <- new eval_debug_context;
-		send_event socket "exceptionStop" (Some (JObject ["threadId",JInt (Thread.id (Thread.self()));"text",JString (value_string v)]))
+		send_event socket "exceptionStop" (Some (JObject ["threadId",JInt (EvalThreads.current()).tid;"text",JString (value_string v)]))
 	in
 	let rec wait () : unit =
 		let rec process_outcome id outcome =

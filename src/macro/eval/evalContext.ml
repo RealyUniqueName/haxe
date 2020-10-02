@@ -319,8 +319,8 @@ let s_debug_state = function
 (* Misc *)
 
 let get_eval ctx =
-    let id = Thread.id (Thread.self()) in
-    if id = 0 then ctx.eval else IntMap.find id ctx.evals
+	let t = Thread.self() in
+	if t == ctx.eval.thread.tthread then ctx.eval else IntMap.find (EvalThreads.current()).tid ctx.evals
 
 let rec kind_name eval kind =
 	let rec loop kind env = match kind with

@@ -92,12 +92,7 @@ let create com api is_macro =
 			debug
 	in
 	let detail_times = Common.defined com Define.EvalTimes in
-	let thread = {
-		tthread = Thread.self();
-		tstorage = IntMap.empty;
-		tevents = vnull;
-		tdeque = EvalThread.Deque.create();
-	} in
+	let thread = EvalThreads.current() in
 	let eval = EvalThread.create_eval thread in
 	let evals = IntMap.singleton 0 eval in
 	let rec ctx = {
@@ -199,7 +194,15 @@ let value_signature v =
 			incr cache_length;
 			f()
 	in
-	let function_count = ref 0 in
+	let custom_name_count = ref 0 in
+	(* Custom format: enumerate something as "name_char0", "name_char1" etc. *)
+	let custom_name name_char =
+		cache v (fun () ->
+			addc name_char;
+			add (string_of_int !custom_name_count);
+			incr custom_name_count
+		)
+	in
 	let rec loop v = match v with
 		| VNull -> addc 'n'
 		| VTrue -> addc 't'
@@ -322,12 +325,9 @@ let value_signature v =
 		| VPrototype _ ->
 			die "" __LOC__
 		| VFunction _ | VFieldClosure _ ->
-			(* Custom format: enumerate functions as F0, F1 etc. *)
-			cache v (fun () ->
-				addc 'F';
-				add (string_of_int !function_count);
-				incr function_count
-			)
+			custom_name 'F'
+		| VDescriptor _ ->
+			custom_name 'D'
 		| VLazy f ->
 			loop (!f())
 	and loop_fields fields =
