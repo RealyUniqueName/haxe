@@ -19,18 +19,6 @@ abstract Rest<T>(NativeRest<T>) {
 		return new Rest(@:privateAccess array.__a);
 	}
 
-	// @:from static public function ofNative<T>(collection:NativeRest<T>):Rest<T> {
-	// 	var result:NativeRest<T>;
-	// 	#if jvm
-	// 		result = (cast collection:Object).clone();
-	// 	#else
-	// 		result = new NativeRest<T>(collection.length);
-	// 		for(i in 0...collection.length)
-	// 			result[i] = cast collection[i];
-	// 	#end
-	// 	return new Rest(result);
-	// }
-
 	inline function new(a:NativeRest<T>):Void
 		this = a;
 
@@ -56,7 +44,6 @@ abstract Rest<T>(NativeRest<T>) {
 	extern inline public function append(item:T):Rest<T> {
 		return _append(createNative(this.length + 1), item);
 	}
-
 	function _append(result:NativeRest<T>, item:T):Rest<T> {
 		System.arraycopy(this, 0, result, 0, this.length);
 		result[this.length] = cast item;
@@ -66,7 +53,6 @@ abstract Rest<T>(NativeRest<T>) {
 	extern inline public function prepend(item:T):Rest<T> {
 		return _prepend(createNative(this.length + 1), item);
 	}
-
 	function _prepend(result:NativeRest<T>, item:T):Rest<T> {
 		System.arraycopy(this, 0, result, 1, this.length);
 		result[0] = cast item;
