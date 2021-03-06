@@ -15,18 +15,8 @@ abstract Rest<T>(NativeRest<T>) {
 	inline function get_length():Int
 		return this.length;
 
-	@:from static inline public function of<T>(array:Array<T>):Rest<T> {
+	@:from static public function of<T>(array:Array<T>):Rest<T> {
 		return new Rest(@:privateAccess array.__a);
-		// var native = @:privateAccess array.__a;
-		// var result:NativeRest<T>;
-		// #if jvm
-		// 	result = (cast native:Object).clone();
-		// #else
-		// 	result = new NativeRest<T>(native.length);
-		// 	for(i in 0...native.length)
-		// 		result[i] = cast native[i];
-		// #end
-		// return new Rest(result);
 	}
 
 	// @:from static public function ofNative<T>(collection:NativeRest<T>):Rest<T> {
@@ -63,20 +53,23 @@ abstract Rest<T>(NativeRest<T>) {
 	public inline function keyValueIterator():RestKeyValueIterator<T>
 		return new RestKeyValueIterator<T>(this);
 
-	public function append(item:T):Rest<T> {
-		// var result = createNative(this.length + 1);
-		var result = new NativeRest<T>(this.length + 1);
+	extern inline public function append(item:T):Rest<T> {
+		return _append(createNative(this.length + 1), item);
+	}
+
+	function _append(result:NativeRest<T>, item:T):Rest<T> {
 		System.arraycopy(this, 0, result, 0, this.length);
-		for(i in 0...this.length)
-			result[i] = this[i];
-		result[this.length] = item;
+		result[this.length] = cast item;
 		return new Rest(result);
 	}
 
-	public function prepend(item:T):Rest<T> {
-		var result = new NativeRest<T>(this.length + 1);
+	extern inline public function prepend(item:T):Rest<T> {
+		return _prepend(createNative(this.length + 1), item);
+	}
+
+	function _prepend(result:NativeRest<T>, item:T):Rest<T> {
 		System.arraycopy(this, 0, result, 1, this.length);
-		result[0] = item;
+		result[0] = cast item;
 		return new Rest(result);
 	}
 

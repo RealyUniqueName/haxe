@@ -1521,7 +1521,7 @@ class texpr_to_jvm gctx (jc : JvmClass.builder) (jm : JvmMethod.builder) (return
 			| _ ->
 				Error.error (Printf.sprintf "Bad __array__ type: %s" (s_type (print_context()) tr)) e1.epos;
 			end
-		(* | TField(_,FStatic({cl_path = (["haxe"],"Rest$Rest_Impl_")},{cf_name = "createNative"})) ->
+		| TField(_,FStatic({cl_path = (["haxe"],"Rest$Rest_Impl_")},{cf_name = "createNative"})) ->
 			begin match tr, el with
 			| TType({ t_path = ["haxe"],"Rest$NativeRest" },[t]), [e2] ->
 				self#texpr (if need_val ret then rvalue_any else RVoid) e2;
@@ -1530,7 +1530,7 @@ class texpr_to_jvm gctx (jc : JvmClass.builder) (jm : JvmMethod.builder) (return
 				Some (array_sig jsig)
 			| _ ->
 				Error.error (Printf.sprintf "Bad __array__ type: %s" (s_type (print_context()) tr)) e1.epos;
-			end *)
+			end
 		| TField(e1,FStatic(c,({cf_kind = Method (MethNormal | MethInline)} as cf))) ->
 			let tl,tr = self#call_arguments cf.cf_type el in
 			jm#invokestatic c.cl_path cf.cf_name (method_sig tl tr);
