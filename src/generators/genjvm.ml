@@ -124,12 +124,12 @@ let rec jsignature_of_type gctx stack t =
 				| [t] -> get_boxed_type (jsignature_of_type t)
 				| _ -> die "" __LOC__
 				end
-			| ["haxe";"ds"],"Vector" ->
+			| ["haxe";"ds"],"Vector" | ["haxe"],"Rest" ->
 				begin match tl with
 				| [t] -> TArray(jsignature_of_type t,None)
 				| _ -> die "" __LOC__
 				end
-			| ["haxe"],"Rest" -> TArray(object_sig,None)
+			(* | ["haxe"],"Rest" -> TArray(object_sig,None) *)
 			| [],"Dynamic" ->
 				object_sig
 			| [],("Class" | "Enum") ->
@@ -1396,7 +1396,7 @@ class texpr_to_jvm gctx (jc : JvmClass.builder) (jm : JvmMethod.builder) (return
 					| TUnop (Spread,_,e) ->
 						self#texpr (rvalue_sig jsig) e
 					| _ ->
-						self#new_native_array (get_boxed_type (jsignature_of_type gctx t1)) (e :: el)
+						self#new_native_array (jsignature_of_type gctx t1) (e :: el)
 					);
 					List.rev (jsig :: acc)
 				| _ ->
@@ -1413,7 +1413,7 @@ class texpr_to_jvm gctx (jc : JvmClass.builder) (jm : JvmMethod.builder) (return
 				(match Type.follow t with
 				| TAbstract({a_path = ["haxe"],"Rest"},[t1]) ->
 					let jsig = jsignature_of_type gctx t in
-					self#new_native_array (get_boxed_type (jsignature_of_type gctx t1)) [];
+					self#new_native_array (jsignature_of_type gctx t1) [];
 					List.rev (jsig :: acc)
 				| _ -> List.rev acc)
 			| _,[] -> List.rev acc
