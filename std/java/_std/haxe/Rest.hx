@@ -23,7 +23,7 @@ abstract Rest<T>(NativeRest<T>) {
 		this = a;
 
 	/**
-	 * JVM: implemented in genjvm
+	 * Implemented in genjvm (to auto-box primitive types) and genjava
 	 */
 	static function createNative<T>(length:Int):NativeRest<T>
 		return new NativeRest<T>(length);
