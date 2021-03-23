@@ -428,7 +428,7 @@ let default_config =
 	}
 
 let get_config com =
-	let defined f = PMap.mem (fst (Define.infos f)) com.defines.values in
+	let defined f = Define.defined com.defines f in
 	match com.platform with
 	| Cross ->
 		default_config
@@ -1089,7 +1089,7 @@ let dump_path com =
 let adapt_defines_to_macro_context defines =
 	let values = ref defines.values in
 	List.iter (fun p -> values := PMap.remove (Globals.platform_name p) !values) Globals.platforms;
-	let to_remove = List.map (fun d -> fst (Define.infos d)) [Define.NoTraces] in
+	let to_remove = List.map (fun d -> Define.get_define_key d) [Define.NoTraces] in
 	let to_remove = to_remove @ List.map (fun (_,d) -> "flash" ^ d) flash_versions in
 	values := PMap.foldi (fun k v acc -> if List.mem k to_remove then acc else PMap.add k v acc) !values PMap.empty;
 	values := PMap.add "macro" "1" !values;

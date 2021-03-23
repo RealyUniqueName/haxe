@@ -6,12 +6,16 @@ type define = {
 	mutable defines_signature : string option;
 }
 
+let get_define_key d =
+	fst (fst (infos d))
+
 let get_documentation_list() =
 	let m = ref 0 in
 	let rec loop i =
 		let d = Obj.magic i in
 		if d <> Last then begin
 			let t, (doc,flags) = infos d in
+			let t = fst t in
 			let params = ref [] and pfs = ref [] in
 			List.iter (function
 				| HasParam s -> params := s :: !params
@@ -35,13 +39,18 @@ let raw_defined ctx v =
 	PMap.mem v ctx.values
 
 let defined ctx v =
-	raw_defined ctx (fst (infos v))
+	let main_key,secondary_key = fst (infos v) in
+	raw_defined ctx main_key || (main_key <> secondary_key && raw_defined ctx secondary_key)
 
 let raw_defined_value ctx k =
 	PMap.find k ctx.values
 
 let defined_value ctx v =
-	raw_defined_value ctx (fst (infos v))
+	let main_key,secondary_key = fst (infos v) in
+	try
+		raw_defined_value ctx main_key
+	with Not_found when main_key <> secondary_key ->
+		raw_defined_value ctx secondary_key
 
 let defined_value_safe ?default ctx v =
 	try defined_value ctx v
@@ -58,10 +67,10 @@ let raw_define ctx v =
 	raw_define_value ctx k v
 
 let define_value ctx k v =
-	raw_define ctx (fst (infos k) ^ "=" ^ v)
+	raw_define ctx ((get_define_key k) ^ "=" ^ v)
 
 let define ctx v =
-	raw_define ctx (fst (infos v))
+	raw_define ctx (get_define_key v)
 
 let get_signature def =
 	match def.defines_signature with
