@@ -79,9 +79,62 @@ let get_main ctx types =
 		in
 		Some main
 
+let rec close_monos types =
+	match types with
+	| [] -> ()
+	| t :: types ->
+		(match t with
+		| TClassDecl c ->
+			let rec loop_type seen t =
+				if List.memq t seen then
+					()
+				else begin
+					let seen = t :: seen in
+					match follow t with
+					| TMono m ->
+						Monomorph.close m
+					| TFun (args,r) ->
+						loop_type seen r;
+						List.iter (fun (_,_,t) -> loop_type seen t) args
+					| TEnum (_,tl) | TInst (_,tl) | TAbstract (_,tl) ->
+						List.iter (loop_type seen) tl
+					| TDynamic t ->
+						loop_type seen t
+					| TAnon a ->
+						PMap.iter (fun _ f -> loop_type seen f.cf_type) a.a_fields
+					| _ -> ()
+				end
+			in
+			let rec loop_expr e =
+				loop_type [] e.etype;
+				iter loop_expr e
+			in
+			let loop_field f =
+				Option.may loop_expr f.cf_expr
+			in
+			Option.may loop_expr c.cl_init;
+			Option.may loop_field c.cl_constructor;
+			List.iter loop_field c.cl_ordered_fields;
+			List.iter loop_field c.cl_ordered_statics;
+		| _ -> ()
+		);
+		close_monos types
+
 let finalize ctx =
 	flush_pass ctx PFinal "final";
-	match ctx.com.callbacks#get_after_typing with
+	let fl = close_monos :: ctx.com.callbacks#get_after_typing in
+	let rec loop handled_types =
+		let all_types = Hashtbl.fold (fun _ m acc -> m.m_types @ acc) ctx.g.modules [] in
+		match (List.filter (fun mt -> not (List.memq mt handled_types)) all_types) with
+		| [] ->
+			()
+		| new_types ->
+			List.iter (fun f -> f new_types) fl;
+			flush_pass ctx PFinal "final";
+			loop all_types
+	in
+	loop []
+	(* match ctx.com.callbacks#get_after_typing with
 		| [] ->
 			()
 		| fl ->
@@ -95,7 +148,7 @@ let finalize ctx =
 					flush_pass ctx PFinal "final";
 					loop all_types
 			in
-			loop []
+			loop [] *)
 
 type state =
 	| Generating

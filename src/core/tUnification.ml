@@ -164,7 +164,7 @@ module Monomorph = struct
 		| TMono m2 ->
 			if m != m2 then begin match m2.tm_type with
 			| None ->
-				List.iter (fun constr -> m2.tm_constraints <- constr :: m2.tm_constraints) m.tm_constraints;
+				List.iter (add_constraint m2) m.tm_constraints;
 				do_bind m t;
 			| Some t ->
 				bind m t
