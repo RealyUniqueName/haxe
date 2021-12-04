@@ -20,25 +20,15 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-package hl;
+package hl.uv;
 
-@:coreType @:notNull @:runtimeValue abstract I64 {
+using hl.uv.UV;
 
-	/**
-		Destructively cast to Int
-	**/
-	public inline function toInt():Int {
-		return cast this;
+/**
+	Libuv buffer
+**/
+abstract Buffer(UvBufTArr) to UvBufTArr {
+	public inline function set(base:Bytes, length:Int) {
+		this.buf_set(base, length);
 	}
-
-	@:hlNative("std", "num_i64_of_int")
-	public static function ofInt(i:Int):I64
-		return cast 0;
-
-	@:to
-	@:deprecated("Implicit cast from I64 to Int (32 bits) is deprecated. Use .toInt() or explicitly cast instead.")
-	inline function implicitToInt(): Int {
-		return toInt();
-	}
-
 }

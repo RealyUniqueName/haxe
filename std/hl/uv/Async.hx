@@ -20,25 +20,40 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-package hl;
+package hl.uv;
 
-@:coreType @:notNull @:runtimeValue abstract I64 {
+import hl.uv.Handle;
+
+using hl.uv.UV;
+
+/**
+	Async handles allow the user to “wakeup” the event loop
+	and get a callback called from another thread.
+
+	@see http://docs.libuv.org/en/v1.x/async.html
+**/
+class Async extends Handle<UvAsyncTStar> {
+	@:keep var onSend:(async:Async)->Void;
 
 	/**
-		Destructively cast to Int
+		Allocate and initialize the handle.
 	**/
-	public inline function toInt():Int {
-		return cast this;
+	static public function init(loop:Loop, callback:(async:Async)->Void):Async {
+		loop.checkLoop();
+		var async = new Async(UV.alloc_async());
+		var result = loop.async_init_with_cb(async.h);
+		if(result < 0) {
+			async.freeHandle();
+			result.throwErr();
+		}
+		async.onSend = callback;
+		return async;
 	}
 
-	@:hlNative("std", "num_i64_of_int")
-	public static function ofInt(i:Int):I64
-		return cast 0;
-
-	@:to
-	@:deprecated("Implicit cast from I64 to Int (32 bits) is deprecated. Use .toInt() or explicitly cast instead.")
-	inline function implicitToInt(): Int {
-		return toInt();
+	/**
+		Wake up the event loop and call the async handle’s callback on the loop's thread.
+	**/
+	public function send():Void {
+		handle(h -> h.async_send().resolve());
 	}
-
 }

@@ -20,25 +20,47 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-package hl;
+package hl.uv;
 
-@:coreType @:notNull @:runtimeValue abstract I64 {
+using hl.uv.UV;
+
+/**
+	Prepare handles will run the given callback once per loop iteration,
+	right before polling for i/o.
+
+	@see http://docs.libuv.org/en/v1.x/prepare.html
+**/
+class Prepare extends Handle<UvPrepareTStar> {
+	var callback:()->Void;
 
 	/**
-		Destructively cast to Int
+		Allocate and initialize the handle.
 	**/
-	public inline function toInt():Int {
-		return cast this;
+	static public function init(loop:Loop):Prepare {
+		loop.checkLoop();
+		var prepare = new Prepare(UV.alloc_prepare());
+		var result = loop.prepare_init(prepare.h);
+		if(result < 0) {
+			prepare.freeHandle();
+			result.throwErr();
+		}
+		return prepare;
 	}
 
-	@:hlNative("std", "num_i64_of_int")
-	public static function ofInt(i:Int):I64
-		return cast 0;
-
-	@:to
-	@:deprecated("Implicit cast from I64 to Int (32 bits) is deprecated. Use .toInt() or explicitly cast instead.")
-	inline function implicitToInt(): Int {
-		return toInt();
+	/**
+		Start the handle with the given callback.
+	**/
+	public function start(callback:()->Void):Void {
+		handle(h -> {
+			h.prepare_start_with_cb().resolve();
+			this.callback = callback;
+		});
 	}
 
+	/**
+		Stop the handle, the callback will no longer be called.
+	**/
+	public function stop():Void {
+		handle(h -> h.prepare_stop().resolve());
+	}
 }
