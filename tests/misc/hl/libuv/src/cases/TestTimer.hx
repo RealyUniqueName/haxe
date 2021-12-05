@@ -59,8 +59,8 @@ class TestTimer extends TestBase {
 			var dt = (HxTimer.stamp() - tm) * 1000;
 			if(cnt == 1) {
 				var repeat = timer.repeat;
-				equals(50, repeat);
-				timer.repeat = repeat * 2;
+				equals(50, (repeat:Int)); //TODO: remove cast to int when hashlink get full support for I64
+				timer.repeat = (repeat:Int) * 2; //TODO: remove cast to int when hashlink get full support for I64
 			} else if(cnt <= 2) {
 				sameInterval(50, dt);
 				tm += 0.1;
@@ -80,9 +80,11 @@ class TestTimer extends TestBase {
 		var timer2 = Timer.init(loop);
 		timer1.start(() -> {}, 100, 0);
 		timer2.start(() -> {
-			sameInterval(0.09, timer1.dueIn / 1000);
+			sameInterval(0.09, (timer1.dueIn:Int) / 1000); //TODO: remove cast to int when hashlink get full support for I64
 			timer1.stop();
+			timer1.close();
 			timer2.stop();
+			timer2.close();
 		}, 10, 0);
 		loop.run(Default);
 	}

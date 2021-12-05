@@ -32,7 +32,7 @@ package hl;
 	}
 
 	@:hlNative("std", "num_i64_of_int")
-	public static function ofInt(i:Int):I64
+	@:from public static function ofInt(i:Int):I64
 		return cast 0;
 
 	@:to
